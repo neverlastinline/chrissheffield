@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BRISBANE LIONS // 198X</title>
+<style>
+  :root {
+    --maroon: #7a1130;
+    --maroon-lite: #b3253f;
+    --blue:   #102a6b;
+    --blue-lite:#2750c8;
+    --gold:   #f5c400;
+    --gold-lite:#ffe680;
+    --cream:  #fff3c2;
+    --black:  #05030a;
+  }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--black);
+    color: var(--gold);
+    font-family: "Courier New", monospace;
+    overflow: hidden;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  /* CRT vignette + scanlines */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0 2px,
+        rgba(0,0,0,0.28) 2px 3px
+      );
+    mix-blend-mode: multiply;
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 51;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.85) 100%);
+  }
+
+  .stage {
+    position: relative;
+    width: 100vw; height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+  }
+
+  /* Star/grid backdrop */
+  .grid {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to bottom, #0a0828 0%, #1b0a3a 40%, #4a0f2e 75%, #7a1130 100%);
+    z-index: 0;
+  }
+  .grid::before {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(245,196,0,0.0) 0%,
+        rgba(245,196,0,0.18) 25%,
+        rgba(245,196,0,0.5) 100%
+      ),
+      repeating-linear-gradient(
+        to right,
+        rgba(245,196,0,0.55) 0 2px,
+        transparent 2px 60px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        rgba(245,196,0,0.55) 0 2px,
+        transparent 2px 28px
+      );
+      transform-origin: center top;
+      transform: perspective(420px) rotateX(58deg) scaleY(2);
+  }
+  .stars { position: absolute; inset: 0 0 50% 0; }
+  .stars i {
+    position: absolute; width: 2px; height: 2px;
+    background: #fff; opacity: 0.85;
+    animation: twinkle 2.4s infinite steps(2);
+  }
+  @keyframes twinkle { 50% { opacity: 0.2; } }
+
+  /* Sun / lion-head moon over horizon */
+  .sun {
+    position: absolute;
+    left: 50%; top: 22%;
+    width: 220px; height: 220px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 50%,
+        var(--gold-lite) 0 35%,
+        var(--gold) 35% 55%,
+        var(--maroon-lite) 55% 75%,
+        var(--maroon) 75% 100%);
+    box-shadow:
+      0 0 60px rgba(245,196,0,0.55),
+      0 0 120px rgba(122,17,48,0.6);
+    z-index: 1;
+    overflow: hidden;
+  }
+  .sun::before, .sun::after {
+    content: ""; position: absolute; left: 0; right: 0; background: var(--black);
+    opacity: 0.55;
+  }
+  .sun::before { top: 60%; height: 4px; }
+  .sun::after  { top: 72%; height: 6px; }
+  .sun-bars { position: absolute; left: 0; right: 0; bottom: 0; height: 50%; z-index: 2; }
+  .sun-bars i {
+    position: absolute; left: 0; right: 0; background: var(--black); opacity: 0.55;
+    animation: barShift 6s linear infinite;
+  }
+  .sun-bars i:nth-child(1){ bottom: 0;    height: 14px; }
+  .sun-bars i:nth-child(2){ bottom: 22px; height: 10px; }
+  .sun-bars i:nth-child(3){ bottom: 40px; height: 8px;  }
+  .sun-bars i:nth-child(4){ bottom: 56px; height: 6px;  }
+  @keyframes barShift { 50% { opacity: 0.35; } }
+
+  /* Title */
+  .titlewrap {
+    position: relative; z-index: 5;
+    text-align: center; padding: 22px 0 8px;
+  }
+  .title {
+    display: inline-block;
+    font-weight: 900;
+    letter-spacing: 6px;
+    font-size: clamp(28px, 6vw, 72px);
+    color: var(--gold);
+    text-shadow:
+      2px 0 0 var(--maroon),
+      4px 0 0 var(--maroon-lite),
+      0 4px 0 var(--blue),
+      4px 4px 0 var(--black),
+      0 0 18px rgba(245,196,0,0.45);
+    transform: skewX(-8deg);
+    animation: titlePulse 1.8s ease-in-out infinite;
+  }
+  .sub {
+    margin-top: 4px;
+    color: var(--cream);
+    letter-spacing: 8px;
+    font-size: clamp(10px, 1.6vw, 16px);
+    text-shadow: 2px 2px 0 var(--maroon);
+  }
+  @keyframes titlePulse {
+    0%, 100% { transform: skewX(-8deg) scale(1); filter: hue-rotate(0); }
+    50%      { transform: skewX(-8deg) scale(1.04); filter: hue-rotate(-12deg); }
+  }
+
+  /* Center play area */
+  .play {
+    position: relative; z-index: 3;
+    display: grid; place-items: center;
+  }
+
+  /* Pixel-art lion: built from a CSS grid of cells (no images) */
+  .lion {
+    --px: clamp(4px, 0.9vw, 9px);
+    width: calc(var(--px) * 24);
+    height: calc(var(--px) * 24);
+    display: grid;
+    grid-template-columns: repeat(24, var(--px));
+    grid-template-rows: repeat(24, var(--px));
+    filter: drop-shadow(0 6px 0 rgba(0,0,0,0.55));
+    animation: bob 1.4s ease-in-out infinite;
+  }
+  .lion span { width: 100%; height: 100%; }
+  .M { background: var(--maroon); }
+  .L { background: var(--maroon-lite); }
+  .B { background: var(--blue); }
+  .Y { background: var(--gold); }
+  .C { background: var(--cream); }
+  .K { background: #1a0a0f; }
+  .W { background: #ffffff; }
+  .T { background: transparent; }
+  @keyframes bob { 50% { transform: translateY(calc(var(--px) * -0.8)); } }
+
+  /* Football arcing across screen */
+  .ball {
+    position: absolute;
+    width: 36px; height: 22px;
+    background:
+      radial-gradient(ellipse at 50% 50%, #b25a10 0 60%, #6b2a00 60% 100%);
+    border-radius: 50%;
+    box-shadow:
+      inset 0 2px 0 rgba(255,255,255,0.35),
+      0 4px 0 rgba(0,0,0,0.5);
+    z-index: 4;
+    animation: kick 3.2s cubic-bezier(.4,.05,.6,.95) infinite;
+  }
+  .ball::before, .ball::after {
+    content: ""; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%,-50%);
+    background: #ffe2b5;
+  }
+  .ball::before { width: 18px; height: 2px; }
+  .ball::after  { width: 2px; height: 8px; }
+  @keyframes kick {
+    0%   { left: -10%;  top: 78%; transform: rotate(0); }
+    40%  { top: 30%; }
+    100% { left: 110%;  top: 78%; transform: rotate(720deg); }
+  }
+
+  /* Roar shockwave */
+  .roar {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%,-50%);
+    width: 40px; height: 40px;
+    border: 4px solid var(--gold);
+    border-radius: 50%;
+    opacity: 0;
+    z-index: 2;
+    animation: roar 1.4s ease-out infinite;
+  }
+  .roar.r2 { animation-delay: 0.46s; border-color: var(--maroon-lite); }
+  .roar.r3 { animation-delay: 0.92s; border-color: var(--cream); }
+  @keyframes roar {
+    0%   { width: 40px;  height: 40px;  opacity: 0.9; }
+    100% { width: 540px; height: 540px; opacity: 0; }
+  }
+
+  /* Scrolling marquee */
+  .marquee {
+    position: relative; z-index: 5;
+    border-top: 3px solid var(--gold);
+    border-bottom: 3px solid var(--gold);
+    background: linear-gradient(to bottom, #08020f 0%, #1b0735 100%);
+    overflow: hidden;
+    height: 44px;
+    display: flex; align-items: center;
+  }
+  .marquee .track {
+    display: flex; gap: 60px;
+    white-space: nowrap;
+    color: var(--gold);
+    letter-spacing: 4px;
+    font-size: 16px;
+    text-shadow: 2px 2px 0 var(--maroon);
+    animation: scroll 22s linear infinite;
+    will-change: transform;
+  }
+  .marquee .track span::before { content: "*  "; color: var(--maroon-lite); }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  .insert {
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+    z-index: 6;
+    color: var(--cream);
+    letter-spacing: 6px;
+    font-size: 14px;
+    text-shadow: 2px 2px 0 var(--maroon);
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .credit {
+    position: absolute; top: 8px; right: 14px; z-index: 6;
+    color: var(--gold-lite); opacity: 0.6;
+    font-size: 11px; letter-spacing: 2px;
+  }
+  .score {
+    position: absolute; top: 8px; left: 14px; z-index: 6;
+    color: var(--cream); font-size: 12px; letter-spacing: 3px;
+  }
+  .score b { color: var(--gold); }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="grid"></div>
+    <div class="stars" id="stars"></div>
+
+    <div class="sun">
+      <div class="sun-bars"><i></i><i></i><i></i><i></i></div>
+    </div>
+
+    <div class="score">1P <b id="score">000000</b>   HI <b>198400</b></div>
+    <div class="credit">(C) 198X LIONHEART SOFT</div>
+
+    <div class="titlewrap">
+      <div class="title">BRISBANE LIONS</div>
+      <div class="sub">- THE PRIDE OF QUEENSLAND -</div>
+    </div>
+
+    <div class="play">
+      <div class="roar"></div>
+      <div class="roar r2"></div>
+      <div class="roar r3"></div>
+      <div class="lion" id="lion"></div>
+      <div class="ball"></div>
+    </div>
+
+    <div class="insert">PRESS  START  TO  ROAR</div>
+
+    <div class="marquee">
+      <div class="track" id="track"></div>
+    </div>
+  </div>
+
+<script>
+  /* Pixel-art lion mascot, 24x24 grid.
+     Legend: M maroon, L maroon-lite, B blue, Y gold, C cream, K black, W white, . transparent */
+  const ART = [
+    "........YYYY....YYYY........",
+    "......YYMMYY..YYMMYY........",
+    "....YYMMMMYYYYMMMMYY........",
+    "...YMMMMMMMMMMMMMMMMY.......",
+    "..YMMLLMMMMMMMMMMLLMMY......",
+    "..YMLLLLMMMMMMMMLLLLMY......",
+    ".YMMLLCLMMMMMMMMLCLLMMY.....",
+    ".YMMMMLLMMMMMMMMLLMMMMY.....",
+    ".YMMMMMMCCCCCCCCMMMMMMY.....",
+    ".YMMMCCCWKWCCWKWCCCMMMY.....",
+    ".YMCCCCCWKWCCWKWCCCCCMY.....",
+    ".YMCCCCCCCCKKCCCCCCCCMY.....",
+    ".YMCCCCCCCKKKKCCCCCCCMY.....",
+    ".YMCCCCCCMMKKMMCCCCCCMY.....",
+    ".YMMCCCCMBBMMBBMCCCCMMY.....",
+    "..YMMCCMBBBBBBBBMCCMMY......",
+    "...YMMMMMBBBBBBMMMMMY.......",
+    "....YMMMMMBBBBMMMMMY........",
+    "....BYMMMMMMMMMMMMYB........",
+    "...BBBYYMMMMMMMMYYBBB.......",
+    "..BBBBBBYYYYYYYYBBBBBB......",
+    "..BBBBBBBBBBBBBBBBBBBB......",
+    "...BBBBBBBBBBBBBBBBBB.......",
+    "....BB..BB....BB..BB........",
+  ];
+  const lion = document.getElementById("lion");
+  const map = { M:"M", L:"L", B:"B", Y:"Y", C:"C", K:"K", W:"W", ".":"T" };
+  const cells = [];
+  for (const row of ART) {
+    for (const ch of row.padEnd(24,".").slice(0,24)) {
+      cells.push(`<span class="${map[ch] || "T"}"></span>`);
+    }
+  }
+  lion.innerHTML = cells.join("");
+
+  /* Twinkling stars */
+  const stars = document.getElementById("stars");
+  let s = "";
+  for (let i = 0; i < 80; i++) {
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const d = (Math.random() * 2.4).toFixed(2);
+    s += `<i style="left:${x}%;top:${y}%;animation-delay:${d}s"></i>`;
+  }
+  stars.innerHTML = s;
+
+  /* Marquee text duplicated for seamless loop */
+  const cheers = [
+    "GO LIONS",
+    "MARCHING IN PRIDE",
+    "GABBA THUNDER",
+    "MAROON  BLUE  GOLD",
+    "TAKE THE FOUR POINTS",
+    "PREMIERS  2024",
+    "ROAR FOR THE PRIDE",
+    "QUEENSLAND'S TEAM",
+  ];
+  const line = cheers.join("   ");
+  const track = document.getElementById("track");
+  track.innerHTML = `<span>${line}</span><span>${line}</span>`;
+
+  /* Fake score ticker for arcade vibes */
+  let score = 0;
+  const scoreEl = document.getElementById("score");
+  setInterval(() => {
+    score = (score + 6) % 1000000;
+    scoreEl.textContent = String(score).padStart(6, "0");
+  }, 120);
+</script>
+</body>
+</html>
