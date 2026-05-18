@@ -42,7 +42,7 @@
     position: relative;
     width: 100vw; height: 100vh;
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto auto 1fr auto;
     overflow: hidden;
   }
 
@@ -137,7 +137,8 @@
   /* Play / canvas */
   .play {
     position: relative; z-index: 3;
-    min-height: 0;
+    min-height: 220px;
+    overflow: hidden;
   }
   canvas#field {
     position: absolute; inset: 0;
@@ -373,6 +374,9 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
   window.addEventListener('resize', resize);
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(resize).observe(canvas);
+  }
 
   // ---------- Game state ----------
   const MODE = { TITLE:'title', READY:'ready', POWER:'power', AIM:'aim', KICK:'kick', RESULT:'result', OVER:'over' };
