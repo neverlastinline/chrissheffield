@@ -695,6 +695,9 @@
     state.distance = plan.d;
     state.angle    = plan.a;
     state.wind     = plan.w;
+    const speedMult = 1 + (idx - 1) * 0.13;   // kick 1: 1.0x  ->  kick 10: ~2.2x
+    state.powerSpeed = 110 * speedMult;
+    state.aimSpeed   =  70 * speedMult;
     state.lockedPower = 0;
     state.lockedAim = 0;
     state.pendingResult = null;
