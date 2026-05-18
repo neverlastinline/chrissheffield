@@ -94,10 +94,10 @@
   .hud {
     position: relative; z-index: 6;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
     padding: 10px 18px;
-    font-size: clamp(10px, 1.3vw, 13px);
+    font-size: clamp(10px, 1.2vw, 13px);
     letter-spacing: 3px;
     color: var(--cream);
     text-shadow: 2px 2px 0 var(--maroon);
@@ -293,8 +293,9 @@
     <div class="hud">
       <div class="cell">1P  <b id="score">00.00.000</b></div>
       <div class="cell">KICK  <b id="kicks">01/10</b></div>
+      <div class="cell">SHOT  <b id="shot">--</b></div>
       <div class="cell">WIND  <b id="wind">--</b></div>
-      <div class="cell">HI  <b id="hi">00.00.000</b></div>
+      <div class="cell">HI  <b id="hi">0</b></div>
     </div>
 
     <div class="titlewrap">
@@ -326,9 +327,9 @@
       <div class="panel">
         <h1>BRISBANE LIONS</h1>
         <h2>GOAL KICK CHAMPIONSHIP</h2>
-        <p>10 SHOTS AT GOAL</p>
-        <p>SPACE TO START POWER METER</p>
-        <p>SPACE AGAIN TO LOCK AIM</p>
+        <p>10 SHOTS &nbsp; 30M &rarr; 60M</p>
+        <p>EACH KICK HARDER &nbsp; ANGLE &amp; WIND RISE</p>
+        <p>SPACE: START POWER &nbsp; LOCK AIM</p>
         <p><b>GOAL = 6</b> &nbsp; <b>BEHIND = 1</b></p>
         <p class="press">PRESS  SPACE  TO  PLAY</p>
       </div>
@@ -377,27 +378,36 @@
   const MODE = { TITLE:'title', READY:'ready', POWER:'power', AIM:'aim', KICK:'kick', RESULT:'result', OVER:'over' };
   const MAX_KICKS = 10;
 
+  // Sequence of 10 shots, escalating difficulty.
+  //   d = distance to goal (m, 30..60)
+  //   a = angle from straight in degrees (-45 left .. +45 right)
+  //   w = wind (m/s, +right -left, deflects ball during flight)
+  const KICK_PLAN = [
+    { d: 30, a:   0, w:   0 },  // 1: set shot, dead in front
+    { d: 35, a: -10, w:   0 },  // 2
+    { d: 35, a:  15, w:   2 },  // 3
+    { d: 40, a: -20, w:  -3 },  // 4
+    { d: 45, a:  25, w:   5 },  // 5
+    { d: 45, a: -30, w:  -7 },  // 6
+    { d: 50, a:  35, w:   9 },  // 7
+    { d: 55, a: -40, w: -12 },  // 8: long, sharp angle
+    { d: 60, a:  40, w:  13 },  // 9
+    { d: 60, a: -45, w: -15 },  // 10: maximum
+  ];
+
   const state = {
     mode: MODE.TITLE,
     kick: 1,
     goals: 0,
     behinds: 0,
-    power: 0,         // 0..100, oscillating
-    powerDir: 1,
-    powerSpeed: 110,  // units/sec
-    aim: 0,           // -50..+50, oscillating
-    aimDir: 1,
-    aimSpeed: 70,
-    lockedPower: 0,
-    lockedAim: 0,
-    wind: 0,          // -8..+8
-    ballT: 0,
-    ballDur: 1.2,
+    power: 0, powerDir: 1, powerSpeed: 110,
+    aim: 0, aimDir: 1, aimSpeed: 70,
+    lockedPower: 0, lockedAim: 0,
+    distance: 30, angle: 0, wind: 0,
+    ballT: 0, ballDur: 1.4,
     ballStartX: 0, ballStartY: 0,
     ballEndX: 0,   ballEndY: 0,
-    resultText: '',
-    resultClass: '',
-    resultTime: 0,
+    pendingResult: null,
     hi: parseInt(localStorage.getItem('lionsHi') || '0', 10),
   };
 
@@ -405,6 +415,7 @@
   const el = {
     score:  document.getElementById('score'),
     kicks:  document.getElementById('kicks'),
+    shot:   document.getElementById('shot'),
     wind:   document.getElementById('wind'),
     hi:     document.getElementById('hi'),
     powerFill: document.getElementById('powerFill'),
@@ -433,29 +444,52 @@
   function fmtWind(w) {
     if (Math.abs(w) < 1) return 'CALM';
     const n = Math.round(Math.abs(w));
-    const arrows = '>'.repeat(Math.min(4, Math.max(1, Math.ceil(n/2))));
-    return (w < 0 ? arrows.split('').map(()=>'<').join('') : arrows) + ' ' + n;
+    const bars = Math.min(4, Math.max(1, Math.ceil(n / 4)));
+    const ch = w < 0 ? '<' : '>';
+    return ch.repeat(bars) + ' ' + n;
+  }
+  function fmtShot(d, a) {
+    const side = a === 0 ? '' : (a < 0 ? ' L' : ' R');
+    return `${d}m${side}${a !== 0 ? Math.abs(a) + String.fromCharCode(176) : ''}`;
   }
   function updateHUD() {
     el.score.textContent = fmtScore(state.goals, state.behinds);
     el.kicks.textContent = `${String(Math.min(state.kick, MAX_KICKS)).padStart(2,'0')}/${MAX_KICKS}`;
-    el.wind.textContent  = fmtWind(state.wind);
-    el.hi.textContent    = `${String(Math.floor(state.hi/1000)).padStart(2,'0')}.${String(Math.floor((state.hi%1000)/10)).padStart(2,'0')}.${String(state.hi%1000).padStart(3,'0')}`;
-    // hi stored as raw points; format as 00.00.000 using goals+behinds isn't stored, just show as total
-    el.hi.textContent = String(state.hi).padStart(3,'0').padStart(8,'0');
-    // simpler: show high score as plain number
-    el.hi.textContent = String(state.hi);
+    el.shot.textContent  = (state.mode === MODE.TITLE) ? '--' : fmtShot(state.distance, state.angle);
+    el.wind.textContent  = (state.mode === MODE.TITLE) ? '--' : fmtWind(state.wind);
+    el.hi.textContent    = String(state.hi);
     el.powerFill.style.width = (state.mode === MODE.AIM || state.mode === MODE.KICK || state.mode === MODE.RESULT
                                   ? state.lockedPower : state.power) + '%';
     const aimVal = (state.mode === MODE.KICK || state.mode === MODE.RESULT) ? state.lockedAim : state.aim;
     el.aimArrow.style.left = (50 + aimVal) + '%';
   }
 
+  // ---------- Field geometry ----------
+  function geom() {
+    const cx = W / 2;
+    const horizonY = H * 0.62;
+    const innerHalf = Math.max(22, W * 0.045);
+    const outerHalf = Math.max(60, W * 0.13);
+    return { cx, horizonY, innerHalf, outerHalf };
+  }
+  function kickerPos() {
+    const { cx, horizonY } = geom();
+    const fieldH = H - horizonY;
+    const distNorm = (state.distance - 30) / 30;   // 0..1
+    const sy = horizonY + (0.30 + 0.55 * distNorm) * fieldH;
+    const sx = cx + (state.angle / 45) * W * 0.40;
+    return { sx, sy };
+  }
+  function kickerScale() {
+    // Closer kicks draw bigger; farther draw smaller (perspective fake)
+    const distNorm = (state.distance - 30) / 30;
+    return Math.max(3, Math.min(7, 7 - distNorm * 3));
+  }
+
   // ---------- Draw field ----------
   function drawScene() {
     ctx.clearRect(0, 0, W, H);
-    const cx = W / 2;
-    const horizonY = H * 0.62;
+    const { cx, horizonY, innerHalf, outerHalf } = geom();
     const postTopY = H * 0.18;
 
     // Slightly darker ground band over CSS grid to anchor posts
@@ -475,8 +509,6 @@
     }
 
     // Goal posts (4)
-    const innerHalf = Math.max(22, W * 0.045);
-    const outerHalf = Math.max(60, W * 0.13);
     const postW = Math.max(6, W * 0.012);
     const posts = [-outerHalf, -innerHalf, innerHalf, outerHalf];
     for (const off of posts) {
@@ -496,13 +528,18 @@
       ctx.fillRect(cx + off - postW/2 - 2, horizonY - 16, postW + 4, 16);
     }
 
-    // Centre square stripe on field
-    ctx.strokeStyle = 'rgba(255,243,194,0.35)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, horizonY + 6);
-    ctx.lineTo(cx, H);
-    ctx.stroke();
+    // Field markings: angle guide from kicker to centre of goal
+    if (state.mode !== MODE.TITLE) {
+      const k = kickerPos();
+      ctx.setLineDash([6, 8]);
+      ctx.strokeStyle = 'rgba(255,243,194,0.18)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, horizonY + 6);
+      ctx.lineTo(k.sx, k.sy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
     // Wind streak indicator on field
     if (Math.abs(state.wind) > 0.5) {
@@ -520,8 +557,9 @@
       }
     }
 
-    // Kicker (pixel lion mascot) at bottom centre
-    drawKicker(cx, H - 28);
+    // Kicker (pixel lion mascot) at distance/angle position
+    const k = kickerPos();
+    drawKicker(k.sx, k.sy);
 
     // Ball
     drawBall(horizonY);
@@ -532,45 +570,54 @@
 
   function drawBall(horizonY) {
     const m = state.mode;
-    const cx = W / 2;
-    const startX = cx, startY = H - 60;
+    const k = kickerPos();
+    const startX = state.ballStartX || k.sx;
+    const startY = state.ballStartY || (k.sy - 14);
     let bx, by, scale, rot;
-    if (m === MODE.KICK || m === MODE.RESULT) {
+    if (m === MODE.KICK) {
       const t = Math.min(state.ballT / state.ballDur, 1);
       const ex = state.ballEndX, ey = state.ballEndY;
       bx = startX + (ex - startX) * t;
-      // arc: parabolic, peak height ~ 60-150
-      const peak = 70 + state.lockedPower * 1.4;
+      const peak = 60 + state.lockedPower * 1.2;
       by = startY + (ey - startY) * t - Math.sin(Math.PI * t) * peak;
-      scale = 1 - 0.55 * Math.min(t, 0.9);  // shrinks with distance
+      // depth scale: ball at horizon should be tiny, ball at kicker full size
+      const depthT = Math.max(0, Math.min(1, (startY - by) / (startY - horizonY + 30)));
+      scale = Math.max(0.25, 1 - 0.7 * depthT);
       rot = t * Math.PI * 4;
+    } else if (m === MODE.RESULT) {
+      bx = state.ballEndX; by = state.ballEndY;
+      scale = Math.max(0.25, 0.32);
+      rot = 0;
     } else {
-      bx = startX; by = startY; scale = 1; rot = 0;
+      bx = k.sx; by = k.sy - 14; scale = Math.min(1, kickerScale() / 6); rot = 0;
     }
+    const baseSize = 16 * scale;
     ctx.save();
     ctx.translate(bx, by);
     ctx.rotate(rot);
-    ctx.scale(scale, scale);
     // body
     ctx.fillStyle = '#7a3a14';
     ctx.beginPath();
-    ctx.ellipse(0, 0, 16, 9, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, baseSize, baseSize * 0.55, 0, 0, Math.PI * 2);
     ctx.fill();
     // highlight
     ctx.fillStyle = 'rgba(255,210,160,0.5)';
     ctx.beginPath();
-    ctx.ellipse(-4, -3, 8, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(-baseSize*0.25, -baseSize*0.2, baseSize*0.5, baseSize*0.18, 0, 0, Math.PI * 2);
     ctx.fill();
     // laces
-    ctx.strokeStyle = '#ffe2b5';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-7, 0); ctx.lineTo(7, 0);
-    ctx.stroke();
-    for (let i = -2; i <= 2; i++) {
+    if (scale > 0.35) {
+      ctx.strokeStyle = '#ffe2b5';
+      ctx.lineWidth = Math.max(1, scale * 2);
       ctx.beginPath();
-      ctx.moveTo(i * 3, -3); ctx.lineTo(i * 3, 3);
+      ctx.moveTo(-baseSize*0.45, 0); ctx.lineTo(baseSize*0.45, 0);
       ctx.stroke();
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * baseSize*0.18, -baseSize*0.2);
+        ctx.lineTo(i * baseSize*0.18,  baseSize*0.2);
+        ctx.stroke();
+      }
     }
     ctx.restore();
   }
@@ -586,17 +633,21 @@
     ".BB..BB.",
     "MM....MM",
   ];
-  function drawKicker(cx, by) {
-    const pxBase = Math.max(3, Math.min(6, W / 220));
-    // bob/kick stance
+  function drawKicker(kx, ky) {
+    const pxBase = kickerScale();
     let pulse = 0;
     if (state.mode === MODE.POWER || state.mode === MODE.AIM) pulse = Math.sin(performance.now()/150) * 1.5;
-    if (state.mode === MODE.KICK && state.ballT < 0.15) pulse = -6;
+    if (state.mode === MODE.KICK && state.ballT < 0.18) pulse = -6;
     const cols = KICKER[0].length;
     const rows = KICKER.length;
     const px = pxBase;
-    const ox = cx - (cols * px) / 2;
-    const oy = by - rows * px + pulse;
+    const ox = kx - (cols * px) / 2;
+    const oy = ky - rows * px + pulse;
+    // shadow under feet
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(kx, ky + 2, cols * px * 0.5, px * 1.1, 0, 0, Math.PI * 2);
+    ctx.fill();
     const map = { M:'#7a1130', L:'#b3253f', Y:'#f5c400', y:'#c89800', B:'#102a6b', K:'#0a0414' };
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -631,14 +682,26 @@
   }
 
   // ---------- Game flow ----------
+  function loadKick(idx) {
+    const plan = KICK_PLAN[Math.min(idx - 1, KICK_PLAN.length - 1)];
+    state.distance = plan.d;
+    state.angle    = plan.a;
+    state.wind     = plan.w;
+    state.lockedPower = 0;
+    state.lockedAim = 0;
+    state.pendingResult = null;
+    state.ballT = 0;
+    state.ballStartX = 0; state.ballStartY = 0;
+    state.ballEndX = 0;   state.ballEndY = 0;
+  }
   function setMode(m) {
     state.mode = m;
     if (m === MODE.READY) {
+      loadKick(state.kick);
       el.prompt.textContent = 'PRESS  SPACE  TO  KICK';
       el.prompt.classList.remove('hidden');
       state.power = 0; state.powerDir = 1;
       state.aim = 0;   state.aimDir = 1;
-      state.wind = (Math.random() * 16 - 8);
     }
     if (m === MODE.POWER) {
       el.prompt.textContent = 'POWER!  SPACE  TO  LOCK';
@@ -652,6 +715,7 @@
       el.prompt.classList.add('hidden');
       el.aimArrow.classList.add('lock');
       setTimeout(() => el.aimArrow.classList.remove('lock'), 400);
+      evaluateKick();
       launchBall();
     }
     if (m === MODE.RESULT) {
@@ -694,44 +758,77 @@
     setMode(MODE.READY);
   }
 
-  function launchBall() {
-    state.ballT = 0;
-    state.ballStartX = W / 2;
-    state.ballStartY = H - 60;
-    const cx = W / 2;
-    const horizonY = H * 0.62;
-    const p = state.lockedPower;
-    const effAim = state.lockedAim + state.wind;
-    // power -> how far ball travels from start to horizon (or short of it)
-    // power 0 -> stays at start, power 50 -> just at horizon, power 100 -> well past
-    const reach = Math.max(0, Math.min(1.2, p / 50));
-    const endY = state.ballStartY + (horizonY - state.ballStartY) * Math.min(reach, 1.05);
-    const pxPerAim = W / 360;
-    const endX = cx + effAim * pxPerAim * Math.max(0.55, Math.min(1.1, reach));
-    state.ballEndX = endX;
-    state.ballEndY = endY;
+  function evaluateKick() {
+    const D = state.distance;
+    const angle = Math.abs(state.angle);
+    const minPower = 28 + Math.max(0, D - 30) * 1.7; // 30m:28  60m:79
+    const distMult  = 0.7 + 0.6 * (D - 30) / 30;     // 30m:0.7  60m:1.3
+    const windMult  = 1 + (D - 30) / 35;             // 30m:1.0  60m:~1.86
+    const effAim = state.lockedAim * distMult;
+    const effWind = state.wind * windMult * (0.55 + 0.45 * angle / 45);
+    const final = effAim + effWind;
+
+    let res;
+    if (state.lockedPower < minPower) {
+      res = { type: 'short', text: 'SHORT!', cls: 'miss', side: Math.sign(final) || 0 };
+    } else {
+      const abs = Math.abs(final);
+      if (abs <= 12)       res = { type: 'goal',   text: 'GOAL!!!',           cls: 'goal',   side: 0 };
+      else if (abs <= 30)  res = { type: 'behind', text: 'BEHIND',            cls: 'behind', side: Math.sign(final) };
+      else                 res = { type: 'miss',   text: 'OUT  ON  THE  FULL', cls: 'miss',   side: Math.sign(final) };
+    }
+    state.pendingResult = res;
   }
 
-  function evaluateKick() {
-    const p = state.lockedPower;
-    const a = state.lockedAim + state.wind;
-    let result;
-    if (p < 50) result = { text: 'SHORT!', cls: 'miss', pts: 0, type: 'miss' };
-    else {
-      const abs = Math.abs(a);
-      if (abs <= 12)      result = { text: 'GOAL!!!', cls: 'goal',   pts: 6, type: 'goal'  };
-      else if (abs <= 30) result = { text: 'BEHIND',  cls: 'behind', pts: 1, type: 'behind'};
-      else                result = { text: 'OUT  ON  THE  FULL', cls: 'miss', pts: 0, type: 'miss' };
+  function launchBall() {
+    state.ballT = 0;
+    const k = kickerPos();
+    state.ballStartX = k.sx;
+    state.ballStartY = k.sy - 14;
+    const { cx, horizonY, innerHalf, outerHalf } = geom();
+    const res = state.pendingResult;
+    let ex, ey;
+    switch (res.type) {
+      case 'short': {
+        // Ball drops short on the field, biased by aim and wind
+        const driftSide = res.side || (state.lockedAim + state.wind > 0 ? 1 : -1);
+        const t = 0.55;
+        ex = state.ballStartX + (cx - state.ballStartX) * t + driftSide * 30;
+        ey = state.ballStartY + (horizonY + 20 - state.ballStartY) * 0.55;
+        break;
+      }
+      case 'goal': {
+        // Through the middle two posts
+        ex = cx + (Math.random() * 0.7 - 0.35) * innerHalf;
+        ey = horizonY - 34;
+        break;
+      }
+      case 'behind': {
+        // Between an inner and outer post (left or right)
+        const side = res.side || (Math.random() < 0.5 ? -1 : 1);
+        const t = 0.15 + Math.random() * 0.7;
+        ex = cx + side * (innerHalf + (outerHalf - innerHalf) * t);
+        ey = horizonY - 28;
+        break;
+      }
+      case 'miss': {
+        const side = res.side || (Math.random() < 0.5 ? -1 : 1);
+        ex = cx + side * (outerHalf + 28 + Math.random() * 40);
+        ey = horizonY - 18;
+        break;
+      }
     }
-    if (result.type === 'goal') state.goals++;
-    if (result.type === 'behind') state.behinds++;
-    state.resultText = result.text;
-    state.resultClass = result.cls;
-    state.resultTime = performance.now();
+    state.ballEndX = ex;
+    state.ballEndY = ey;
+  }
 
-    el.flash.textContent = result.text;
-    el.flash.className = 'flash ' + result.cls;
-    // restart animation
+  function applyResult() {
+    const r = state.pendingResult;
+    if (!r) return;
+    if (r.type === 'goal')   state.goals++;
+    if (r.type === 'behind') state.behinds++;
+    el.flash.textContent = r.text;
+    el.flash.className = 'flash ' + r.cls;
     el.flash.style.animation = 'none';
     void el.flash.offsetWidth;
     el.flash.style.animation = '';
@@ -794,7 +891,7 @@
     } else if (state.mode === MODE.KICK) {
       state.ballT += dt;
       if (state.ballT >= state.ballDur) {
-        evaluateKick();
+        applyResult();
         setMode(MODE.RESULT);
       }
     }
