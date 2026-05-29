@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - claude/lions-retro-animation-lk98i
+      - claude/afl-nextjs-fullstack-app-NPfwT
       - main
   workflow_dispatch:
 
