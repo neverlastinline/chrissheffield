@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#7f1d1d" />
+  <title>Footy Feud — AFL Card Game</title>
+  <meta name="description" content="Online AFL stat-comparison card game. Build a deck, pick a stat, beat the CPU." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --panel: #11141b;
+      --panel-2: #161a23;
+      --border: #232836;
+      --text: #e6e9ef;
+      --muted: #8a93a6;
+      --primary: #b91c1c;       /* AFL maroon */
+      --primary-2: #ef4444;
+      --accent: #f5c518;        /* gold */
+      --good: #22c55e;
+      --bad: #ef4444;
+      --radius: 12px;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f7f9;
+        --panel: #ffffff;
+        --panel-2: #f0f2f6;
+        --border: #e2e5ec;
+        --text: #15171c;
+        --muted: #5b6271;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      line-height: 1.45;
+    }
+    h1, h2, h3 { margin: 0; letter-spacing: -0.02em; }
+    button { font: inherit; cursor: pointer; }
+    a { color: var(--accent); }
+    .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+    header.app {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklab, var(--bg) 88%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    header .row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; max-width: 720px; margin: 0 auto;
+    }
+    .brand { font-weight: 800; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+    .brand .badge { font-size: 12px; color: var(--accent); border: 1px solid var(--accent); padding: 2px 6px; border-radius: 999px; }
+    nav.tabs { display: flex; gap: 4px; padding: 8px 16px; max-width: 720px; margin: 0 auto; overflow-x: auto; }
+    nav.tabs button {
+      flex: 0 0 auto; background: transparent; color: var(--muted); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 999px; font-size: 13px;
+    }
+    nav.tabs button[aria-current="page"] { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .panel {
+      background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 16px;
+    }
+    .panel h2 { font-size: 18px; margin-bottom: 6px; }
+    .panel .muted { color: var(--muted); font-size: 13px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+      background: var(--primary); color: white; border: 1px solid var(--primary);
+      padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 14px;
+      transition: transform .05s ease, opacity .15s ease;
+    }
+    .btn:hover { opacity: 0.92; }
+    .btn:active { transform: translateY(1px); }
+    .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+    .btn.outline { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn.ghost   { background: transparent; color: var(--text); border-color: transparent; }
+    .btn.bad     { background: transparent; color: var(--bad); border-color: var(--border); }
+    .btn.accent  { background: var(--accent); color: #1a1300; border-color: var(--accent); }
+    .btn.sm      { padding: 6px 10px; font-size: 12.5px; border-radius: 8px; }
+
+    /* Forms */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+    .field label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .field input, .field select {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; font-size: 15px;
+    }
+    .field input:focus, .field select:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 420px) { .row-3 { grid-template-columns: 1fr 1fr; } }
+
+    /* Deck grid */
+    .deck-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    /* Cards */
+    .card {
+      aspect-ratio: 3 / 4;
+      border-radius: var(--radius); border: 2px solid var(--primary);
+      background: var(--panel); display: flex; flex-direction: column;
+      overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    .card.cpu { border-color: #4b5563; }
+    .card .header {
+      background: color-mix(in oklab, var(--primary) 18%, transparent);
+      color: var(--primary-2); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      display: flex; justify-content: space-between; padding: 8px 10px;
+    }
+    .card.cpu .header { background: color-mix(in oklab, #ef4444 12%, transparent); color: #f87171; }
+    .card .body { padding: 10px; display: flex; flex-direction: column; flex: 1; gap: 6px; }
+    .card .name { font-weight: 800; font-size: 16px; line-height: 1.15; }
+    .card .stats { margin-top: auto; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+    .card .stat {
+      display: flex; justify-content: space-between; padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .card .stat:nth-child(odd) { background: var(--panel-2); }
+    .card .stat.selected {
+      background: var(--accent); color: #1a1300; font-weight: 700;
+    }
+    .card .stat .val { font-variant-numeric: tabular-nums; }
+
+    .card.face-down {
+      align-items: center; justify-content: center;
+      font-size: 56px; font-weight: 900; letter-spacing: -0.04em;
+      color: var(--accent);
+      background: repeating-linear-gradient(
+        45deg,
+        var(--primary), var(--primary) 12px,
+        color-mix(in oklab, var(--primary) 70%, black) 12px,
+        color-mix(in oklab, var(--primary) 70%, black) 24px
+      );
+    }
+    .card.face-down::after { content: "FF"; }
+
+    /* Play screen */
+    .vs {
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
+      margin-bottom: 14px;
+    }
+    .score {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 12px; text-align: center; font-weight: 700; font-size: 15px;
+    }
+    .score.you { color: var(--accent); }
+    .score.cpu { color: var(--primary-2); }
+    .vs .swords { color: var(--muted); font-size: 18px; text-align: center; }
+
+    .duel { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .duel .col { display: flex; flex-direction: column; gap: 6px; }
+    .duel .label { font-size: 12px; color: var(--muted); text-align: center; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .stat-picker {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;
+    }
+    .stat-picker button {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 8px; text-align: left; min-height: 56px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-picker button:hover { border-color: var(--accent); }
+    .stat-picker .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-picker .v { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    .verdict {
+      text-align: center; padding: 14px; border-radius: 10px;
+      background: var(--panel-2); border: 1px solid var(--border); margin-top: 12px;
+    }
+    .verdict.win  { border-color: var(--good); color: var(--good); }
+    .verdict.loss { border-color: var(--bad);  color: var(--bad);  }
+    .verdict.draw { color: var(--muted); }
+
+    /* Toast / banner */
+    .banner {
+      position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+      background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+      padding: 10px 16px; font-size: 13px; color: var(--text);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      opacity: 0; pointer-events: none; transition: opacity .2s ease;
+      z-index: 100;
+    }
+    .banner.show { opacity: 1; }
+
+    .empty {
+      text-align: center; padding: 40px 16px; border: 2px dashed var(--border); border-radius: var(--radius);
+      color: var(--muted);
+    }
+    .empty p { margin: 6px 0 16px; }
+
+    .results-list { list-style: none; padding: 0; margin: 0; }
+    .results-list li {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .results-list li:last-child { border-bottom: 0; }
+    .results-list .tag {
+      font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .results-list .tag.win  { background: color-mix(in oklab, var(--good) 18%, transparent); color: var(--good); }
+    .results-list .tag.loss { background: color-mix(in oklab, var(--bad) 18%, transparent);  color: var(--bad); }
+    .results-list .tag.draw { background: var(--panel-2); color: var(--muted); }
+
+    footer.app {
+      padding: 20px 16px 32px; color: var(--muted); font-size: 12px; text-align: center;
+    }
+    footer.app a { color: var(--muted); text-decoration: underline; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="app">
+    <div class="row">
+      <div class="brand">
+        <span>⚔️ Footy Feud</span>
+        <span class="badge">offline</span>
+      </div>
+      <button class="btn ghost sm" id="seed-btn" title="Add 6 sample players">Seed sample deck</button>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <button data-tab="play" aria-current="page">Play</button>
+      <button data-tab="deck">Deck</button>
+      <button data-tab="results">Results</button>
+      <button data-tab="how">How to play</button>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- PLAY -->
+    <section id="tab-play">
+      <div id="play-empty" class="empty" hidden>
+        <h3>Build a deck to start</h3>
+        <p>You need at least 5 cards. Tap <strong>Seed sample deck</strong> or head to the <a href="#" data-go="deck">Deck tab</a>.</p>
+        <button class="btn" id="play-empty-seed">Seed sample deck</button>
+      </div>
+
+      <div id="play-game" hidden>
+        <div class="vs">
+          <div class="score you">You <span id="user-score">0</span></div>
+          <div class="swords">⚔️</div>
+          <div class="score cpu">CPU <span id="cpu-score">0</span></div>
+        </div>
+        <p class="muted" style="text-align:center; font-size:12px;">
+          <span id="cards-left">0</span> cards left in your deck
+        </p>
+
+        <div class="duel">
+          <div class="col">
+            <div class="label">Your card</div>
+            <div id="user-card-mount"></div>
+          </div>
+          <div class="col">
+            <div class="label">CPU's card</div>
+            <div id="cpu-card-mount"></div>
+          </div>
+        </div>
+
+        <div id="picker-wrap">
+          <p class="muted" style="text-align:center; font-size:13px; margin: 0 0 8px;">Pick a stat to attack with</p>
+          <div class="stat-picker" id="stat-picker"></div>
+        </div>
+
+        <div id="verdict-wrap" hidden>
+          <div id="verdict" class="verdict"></div>
+          <div style="text-align:center; margin-top:12px;">
+            <button class="btn" id="next-btn">Next card</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="play-finished" class="panel" hidden style="text-align:center;">
+        <h2 id="final-title">Game over</h2>
+        <p class="muted" id="final-detail"></p>
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:12px; flex-wrap: wrap;">
+          <button class="btn" id="rematch-btn">Rematch</button>
+          <button class="btn outline" id="back-deck-btn">Edit deck</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DECK -->
+    <section id="tab-deck" hidden>
+      <div class="panel" id="card-form-panel">
+        <h2 id="form-title">Add a card</h2>
+        <p class="muted">Stats are 0–100. Bigger numbers, bigger chance of winning that stat.</p>
+
+        <form id="card-form" autocomplete="off">
+          <input type="hidden" name="id" />
+          <div class="row-2">
+            <div class="field">
+              <label for="f-name">Player name</label>
+              <input id="f-name" name="player_name" required maxlength="80" placeholder="Marcus Bontempelli" />
+            </div>
+            <div class="field">
+              <label for="f-team">Team</label>
+              <input id="f-team" name="team" required maxlength="60" placeholder="Western Bulldogs" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-position">Position</label>
+            <select id="f-position" name="position">
+              <option>Midfielder</option>
+              <option>Forward</option>
+              <option>Defender</option>
+              <option>Ruck</option>
+              <option>Utility</option>
+            </select>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>Kicks</label><input type="number" name="kicks"     min="0" max="100" value="60" required /></div>
+            <div class="field"><label>Handballs</label><input type="number" name="handballs" min="0" max="100" value="55" required /></div>
+            <div class="field"><label>Marks</label><input type="number" name="marks"     min="0" max="100" value="50" required /></div>
+            <div class="field"><label>Tackles</label><input type="number" name="tackles" min="0" max="100" value="50" required /></div>
+            <div class="field"><label>Goals</label><input type="number" name="goals"     min="0" max="100" value="45" required /></div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap: wrap;">
+            <button class="btn" type="submit" id="form-submit">Add card</button>
+            <button class="btn outline" type="button" id="form-cancel" hidden>Cancel edit</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2 style="display:flex; justify-content:space-between; align-items:center;">
+          <span>My deck <span class="muted" id="deck-count" style="font-weight:400; font-size: 13px;"></span></span>
+          <button class="btn ghost sm" id="clear-deck-btn">Clear all</button>
+        </h2>
+        <div id="deck-empty" class="empty" hidden>
+          <p>No cards yet. Add one above or seed a sample deck.</p>
+          <button class="btn" id="deck-empty-seed">Seed sample deck</button>
+        </div>
+        <div class="deck-grid" id="deck-grid"></div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="tab-results" hidden>
+      <div class="panel">
+        <h2>Your record</h2>
+        <p class="muted" id="record-summary">No games yet.</p>
+        <ul class="results-list" id="results-list"></ul>
+        <div style="margin-top:12px; text-align:right;">
+          <button class="btn ghost sm" id="clear-results-btn">Clear history</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW -->
+    <section id="tab-how" hidden>
+      <div class="panel">
+        <h2>How to play</h2>
+        <ol style="padding-left: 18px; line-height: 1.7;">
+          <li>Build a deck of at least 5 AFL player cards. Each card has 5 stats — kicks, handballs, marks, tackles, goals — rated 0–100.</li>
+          <li>Tap <strong>Play</strong>. Your top card faces up. The CPU's is face-down.</li>
+          <li>Pick a stat. CPU card flips. Highest value wins the round. Ties don't score.</li>
+          <li>Next card, repeat. When either deck empties, the higher score wins the match.</li>
+        </ol>
+        <p class="muted">Your deck and history are stored in your browser only — clear your data and they're gone. No accounts, no servers.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app">
+    Built with vanilla HTML/CSS/JS. Plays offline. Not affiliated with the AFL.
+  </footer>
+
+  <div class="banner" id="banner" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // ---------- Storage ----------
+      const STORAGE_KEY = "footy-feud:v1";
+      const initialState = { deck: [], results: [] };
+      const state = load();
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return structuredClone(initialState);
+          const parsed = JSON.parse(raw);
+          return Object.assign(structuredClone(initialState), parsed);
+        } catch {
+          return structuredClone(initialState);
+        }
+      }
+      function persist() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+        catch (e) { console.warn("storage failed", e); }
+      }
+
+      // ---------- Constants ----------
+      const STATS = ["kicks", "handballs", "marks", "tackles", "goals"];
+      const POSITIONS = ["Forward","Midfielder","Defender","Ruck","Utility"];
+
+      const SAMPLE = [
+        { player_name: "Marcus Bontempelli", team: "Western Bulldogs", position: "Midfielder", kicks: 88, handballs: 82, marks: 74, tackles: 70, goals: 72 },
+        { player_name: "Patrick Cripps",     team: "Carlton",          position: "Midfielder", kicks: 80, handballs: 90, marks: 60, tackles: 86, goals: 58 },
+        { player_name: "Nick Daicos",        team: "Collingwood",      position: "Midfielder", kicks: 92, handballs: 78, marks: 70, tackles: 60, goals: 64 },
+        { player_name: "Charlie Curnow",     team: "Carlton",          position: "Forward",    kicks: 70, handballs: 50, marks: 88, tackles: 35, goals: 95 },
+        { player_name: "Max Gawn",           team: "Melbourne",        position: "Ruck",       kicks: 72, handballs: 68, marks: 90, tackles: 55, goals: 50 },
+        { player_name: "Isaac Heeney",       team: "Sydney Swans",     position: "Utility",    kicks: 78, handballs: 72, marks: 80, tackles: 65, goals: 82 },
+      ];
+
+      const FIRST = ["Marcus","Jordan","Tom","Lachie","Patrick","Charlie","Jack","Sam","Zach","Toby","Harry","Bailey","Hugh","Will","Nick"];
+      const LAST  = ["Walker","Daicos","Mitchell","Neale","Cripps","Curnow","Heeney","Brayshaw","Petracca","Bontempelli","Macrae","Steele","Anderson","Rozee","Butters"];
+      const CPU_TEAMS = ["Brisbane Lions","Collingwood","Carlton","Geelong Cats","Sydney Swans","Melbourne","Port Adelaide","GWS Giants","Western Bulldogs","Hawthorn"];
+
+      function rand(min, max) { return Math.floor(min + Math.random() * (max - min + 1)); }
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+      function makeId() {
+        return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      }
+      function genCpuDeck(size) {
+        const out = [];
+        for (let i = 0; i < size; i++) {
+          out.push({
+            id: "cpu_" + i,
+            player_name: FIRST[rand(0, FIRST.length - 1)] + " " + LAST[rand(0, LAST.length - 1)],
+            team: CPU_TEAMS[rand(0, CPU_TEAMS.length - 1)],
+            position: POSITIONS[rand(0, POSITIONS.length - 1)],
+            kicks: rand(35, 95), handballs: rand(35, 95), marks: rand(35, 95),
+            tackles: rand(35, 95), goals: rand(20, 95),
+          });
+        }
+        return out;
+      }
+
+      // ---------- DOM helpers ----------
+      const $ = (sel, root) => (root || document).querySelector(sel);
+      const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+      function showBanner(text) {
+        const b = $("#banner");
+        b.textContent = text;
+        b.classList.add("show");
+        clearTimeout(showBanner._t);
+        showBanner._t = setTimeout(() => b.classList.remove("show"), 1800);
+      }
+
+      // ---------- Tabs ----------
+      function setTab(name) {
+        $$("nav.tabs button").forEach(b => {
+          b.setAttribute("aria-current", b.dataset.tab === name ? "page" : "false");
+        });
+        ["play", "deck", "results", "how"].forEach(t => {
+          $("#tab-" + t).hidden = t !== name;
+        });
+        if (name === "play")    renderPlay();
+        if (name === "deck")    renderDeck();
+        if (name === "results") renderResults();
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
+      $$("nav.tabs button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+      $$("[data-go]").forEach(a => a.addEventListener("click", (e) => { e.preventDefault(); setTab(a.dataset.go); }));
+
+      // ---------- Card render ----------
+      function renderCard(card, opts) {
+        opts = opts || {};
+        if (opts.faceDown) {
+          const el = document.createElement("div");
+          el.className = "card face-down" + (opts.cpu ? " cpu" : "");
+          return el;
+        }
+        const el = document.createElement("div");
+        el.className = "card" + (opts.cpu ? " cpu" : "");
+        const header = document.createElement("div");
+        header.className = "header";
+        header.innerHTML = `<span>${escape(card.position)}</span><span>${escape(card.team)}</span>`;
+        const body = document.createElement("div");
+        body.className = "body";
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = card.player_name;
+        const statsEl = document.createElement("div");
+        statsEl.className = "stats";
+        STATS.forEach(s => {
+          const row = document.createElement("div");
+          row.className = "stat" + (opts.selected === s ? " selected" : "");
+          row.innerHTML = `<span style="text-transform:capitalize">${s}</span><span class="val">${card[s]}</span>`;
+          statsEl.appendChild(row);
+        });
+        body.appendChild(name);
+        body.appendChild(statsEl);
+        el.appendChild(header);
+        el.appendChild(body);
+        return el;
+      }
+
+      function escape(s) {
+        return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      }
+
+      // ---------- Play state ----------
+      let game = null; // { userDeck, cpuDeck, userScore, cpuScore, phase, chosenStat, roundResult }
+
+      function startGame() {
+        if (state.deck.length < 5) return;
+        const size = state.deck.length;
+        game = {
+          userDeck: shuffle(state.deck),
+          cpuDeck: shuffle(genCpuDeck(size)),
+          userScore: 0,
+          cpuScore: 0,
+          phase: "choose",
+          chosenStat: null,
+          roundResult: null,
+          totalCards: size,
+        };
+        renderPlay();
+      }
+
+      function pickStat(stat) {
+        if (!game || game.phase !== "choose") return;
+        const u = game.userDeck[0], c = game.cpuDeck[0];
+        game.chosenStat = stat;
+        if (u[stat] > c[stat])      { game.roundResult = "user"; game.userScore++; }
+        else if (c[stat] > u[stat]) { game.roundResult = "cpu";  game.cpuScore++; }
+        else                        { game.roundResult = "draw"; }
+        game.phase = "reveal";
+        renderPlay();
+      }
+
+      function nextCard() {
+        if (!game || game.phase !== "reveal") return;
+        game.userDeck = game.userDeck.slice(1);
+        game.cpuDeck = game.cpuDeck.slice(1);
+        game.chosenStat = null;
+        game.roundResult = null;
+        if (game.userDeck.length === 0 || game.cpuDeck.length === 0) {
+          game.phase = "finished";
+          recordResult();
+        } else {
+          game.phase = "choose";
+        }
+        renderPlay();
+      }
+
+      function recordResult() {
+        const outcome = game.userScore > game.cpuScore ? "win"
+                       : game.cpuScore > game.userScore ? "loss" : "draw";
+        state.results.unshift({
+          id: makeId(),
+          user_score: game.userScore,
+          cpu_score: game.cpuScore,
+          rounds_played: game.userScore + game.cpuScore,
+          outcome,
+          played_at: new Date().toISOString(),
+        });
+        state.results = state.results.slice(0, 50);
+        persist();
+        showBanner(outcome === "win" ? "Saved — what a win!" :
+                   outcome === "loss" ? "Saved — tough one." :
+                   "Saved — even contest.");
+      }
+
+      function renderPlay() {
+        const empty = $("#play-empty");
+        const gameEl = $("#play-game");
+        const finished = $("#play-finished");
+
+        if (state.deck.length < 5) {
+          empty.hidden = false;
+          gameEl.hidden = true;
+          finished.hidden = true;
+          game = null;
+          return;
+        }
+        empty.hidden = true;
+
+        if (!game) startGame();
+
+        if (game.phase === "finished") {
+          gameEl.hidden = true;
+          finished.hidden = false;
+          const u = game.userScore, c = game.cpuScore;
+          const out = u > c ? "win" : c > u ? "loss" : "draw";
+          $("#final-title").textContent =
+            out === "win"  ? "Siren goes — you win!" :
+            out === "loss" ? "Pipped at the post." : "All square.";
+          $("#final-detail").textContent = `Final: ${u} – ${c} over ${u + c} round${u + c === 1 ? "" : "s"}.`;
+          return;
+        }
+
+        finished.hidden = true;
+        gameEl.hidden = false;
+
+        $("#user-score").textContent = game.userScore;
+        $("#cpu-score").textContent = game.cpuScore;
+        $("#cards-left").textContent = game.userDeck.length;
+
+        const u = game.userDeck[0], c = game.cpuDeck[0];
+
+        const userMount = $("#user-card-mount");
+        userMount.innerHTML = "";
+        userMount.appendChild(renderCard(u, { selected: game.chosenStat }));
+
+        const cpuMount = $("#cpu-card-mount");
+        cpuMount.innerHTML = "";
+        if (game.phase === "choose") {
+          cpuMount.appendChild(renderCard(c, { faceDown: true, cpu: true }));
+        } else {
+          cpuMount.appendChild(renderCard(c, { selected: game.chosenStat, cpu: true }));
+        }
+
+        const picker = $("#picker-wrap");
+        const verdict = $("#verdict-wrap");
+        if (game.phase === "choose") {
+          picker.hidden = false;
+          verdict.hidden = true;
+          const pickEl = $("#stat-picker");
+          pickEl.innerHTML = "";
+          STATS.forEach(s => {
+            const btn = document.createElement("button");
+            btn.innerHTML = `<span class="k">${s}</span><span class="v">${u[s]}</span>`;
+            btn.addEventListener("click", () => pickStat(s));
+            pickEl.appendChild(btn);
+          });
+        } else {
+          picker.hidden = true;
+          verdict.hidden = false;
+          const v = $("#verdict");
+          v.className = "verdict " + (game.roundResult === "user" ? "win" : game.roundResult === "cpu" ? "loss" : "draw");
+          if (game.roundResult === "user") {
+            v.textContent = `You took it — ${game.chosenStat} ${u[game.chosenStat]} vs ${c[game.chosenStat]}`;
+          } else if (game.roundResult === "cpu") {
+            v.textContent = `CPU clipped you — ${game.chosenStat} ${u[game.chosenStat]} vs ${c[game.chosenStat]}`;
+          } else {
+            v.textContent = `Tied — both ${game.chosenStat} on ${u[game.chosenStat]}`;
+          }
+        }
+      }
+
+      $("#next-btn").addEventListener("click", nextCard);
+      $("#rematch-btn").addEventListener("click", () => { game = null; renderPlay(); });
+      $("#back-deck-btn").addEventListener("click", () => { game = null; setTab("deck"); });
+      $("#play-empty-seed").addEventListener("click", seedSample);
+
+      // ---------- Deck CRUD ----------
+      function renderDeck() {
+        const grid = $("#deck-grid");
+        const empty = $("#deck-empty");
+        $("#deck-count").textContent = `(${state.deck.length} card${state.deck.length === 1 ? "" : "s"})`;
+        grid.innerHTML = "";
+        if (state.deck.length === 0) {
+          empty.hidden = false;
+          return;
+        }
+        empty.hidden = true;
+        state.deck.forEach(card => {
+          const wrap = document.createElement("div");
+          wrap.style.display = "flex";
+          wrap.style.flexDirection = "column";
+          wrap.style.gap = "6px";
+          wrap.appendChild(renderCard(card));
+          const ctrls = document.createElement("div");
+          ctrls.style.display = "flex";
+          ctrls.style.gap = "6px";
+          const edit = document.createElement("button");
+          edit.className = "btn outline sm";
+          edit.textContent = "Edit";
+          edit.style.flex = "1";
+          edit.addEventListener("click", () => loadCardIntoForm(card.id));
+          const del = document.createElement("button");
+          del.className = "btn bad sm";
+          del.textContent = "Delete";
+          del.addEventListener("click", () => {
+            if (!confirm(`Delete ${card.player_name}?`)) return;
+            state.deck = state.deck.filter(c => c.id !== card.id);
+            persist();
+            game = null;
+            renderDeck();
+            showBanner("Card deleted");
+          });
+          ctrls.appendChild(edit);
+          ctrls.appendChild(del);
+          wrap.appendChild(ctrls);
+          grid.appendChild(wrap);
+        });
+      }
+
+      $("#deck-empty-seed").addEventListener("click", seedSample);
+      $("#seed-btn").addEventListener("click", seedSample);
+
+      function seedSample() {
+        SAMPLE.forEach(s => state.deck.push(Object.assign({ id: makeId() }, s)));
+        persist();
+        game = null;
+        showBanner(`Added ${SAMPLE.length} sample cards`);
+        if ($("#tab-deck").hidden === false) renderDeck();
+        else renderPlay();
+      }
+
+      $("#clear-deck-btn").addEventListener("click", () => {
+        if (state.deck.length === 0) return;
+        if (!confirm("Delete your entire deck? This can't be undone.")) return;
+        state.deck = [];
+        persist();
+        game = null;
+        renderDeck();
+      });
+
+      // ---------- Form (add / edit) ----------
+      const form = $("#card-form");
+      function resetForm() {
+        form.reset();
+        form.id.value = "";
+        $("#form-title").textContent = "Add a card";
+        $("#form-submit").textContent = "Add card";
+        $("#form-cancel").hidden = true;
+      }
+      function loadCardIntoForm(id) {
+        const c = state.deck.find(x => x.id === id);
+        if (!c) return;
+        form.id.value = c.id;
+        form.player_name.value = c.player_name;
+        form.team.value = c.team;
+        form.position.value = c.position;
+        form.kicks.value = c.kicks;
+        form.handballs.value = c.handballs;
+        form.marks.value = c.marks;
+        form.tackles.value = c.tackles;
+        form.goals.value = c.goals;
+        $("#form-title").textContent = "Edit card";
+        $("#form-submit").textContent = "Save changes";
+        $("#form-cancel").hidden = false;
+        $("#card-form-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      $("#form-cancel").addEventListener("click", resetForm);
+
+      function clampStat(n) {
+        const x = parseInt(n, 10);
+        if (Number.isNaN(x)) return 0;
+        return Math.max(0, Math.min(100, x));
+      }
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const data = {
+          player_name: form.player_name.value.trim(),
+          team: form.team.value.trim(),
+          position: form.position.value,
+          kicks: clampStat(form.kicks.value),
+          handballs: clampStat(form.handballs.value),
+          marks: clampStat(form.marks.value),
+          tackles: clampStat(form.tackles.value),
+          goals: clampStat(form.goals.value),
+        };
+        if (data.player_name.length < 2) { showBanner("Player name required"); return; }
+        if (data.team.length < 2) { showBanner("Team required"); return; }
+
+        if (form.id.value) {
+          state.deck = state.deck.map(c => c.id === form.id.value ? Object.assign({}, c, data) : c);
+          showBanner("Card updated");
+        } else {
+          state.deck.push(Object.assign({ id: makeId() }, data));
+          showBanner("Card added");
+        }
+        persist();
+        game = null;
+        resetForm();
+        renderDeck();
+      });
+
+      // ---------- Results ----------
+      function renderResults() {
+        const list = $("#results-list");
+        list.innerHTML = "";
+        const r = state.results;
+        const w = r.filter(x => x.outcome === "win").length;
+        const l = r.filter(x => x.outcome === "loss").length;
+        const d = r.filter(x => x.outcome === "draw").length;
+        $("#record-summary").textContent = r.length === 0
+          ? "No games yet — play one!"
+          : `${r.length} game${r.length === 1 ? "" : "s"} · ${w}W – ${l}L – ${d}D`;
+        r.forEach(g => {
+          const li = document.createElement("li");
+          const left = document.createElement("span");
+          left.style.color = "var(--muted)";
+          left.style.fontSize = "12px";
+          left.textContent = new Date(g.played_at).toLocaleString();
+          const mid = document.createElement("span");
+          mid.style.fontVariantNumeric = "tabular-nums";
+          mid.textContent = `${g.user_score} – ${g.cpu_score}`;
+          const tag = document.createElement("span");
+          tag.className = "tag " + g.outcome;
+          tag.textContent = g.outcome;
+          li.appendChild(left);
+          li.appendChild(mid);
+          li.appendChild(tag);
+          list.appendChild(li);
+        });
+      }
+      $("#clear-results-btn").addEventListener("click", () => {
+        if (state.results.length === 0) return;
+        if (!confirm("Clear all game history?")) return;
+        state.results = [];
+        persist();
+        renderResults();
+      });
+
+      // ---------- Boot ----------
+      renderDeck();
+      renderResults();
+      setTab("play");
+    })();
+  </script>
+</body>
+</html>
