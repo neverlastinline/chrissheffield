@@ -4,49 +4,100 @@ type Section = {
   heading: string;
   body: string[];
   bullets?: string[];
+  callout?: { label: string; body: string };
+  template?: { label: string; text: string };
 };
+
+function Callout({ label, body }: { label: string; body: string }) {
+  return (
+    <div className="my-5 overflow-hidden rounded-xl border border-claude-line bg-claude-card">
+      <div className="border-l-4 border-claude-coral px-5 py-4">
+        <p className="text-xs font-bold uppercase tracking-wider text-claude-coraldark">
+          {label}
+        </p>
+        <p className="mt-1.5 leading-relaxed text-claude-ink">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+function Template({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="my-5 rounded-xl bg-claude-dark px-5 py-4">
+      <p className="text-xs font-bold uppercase tracking-wider text-claude-coral">
+        {label}
+      </p>
+      <pre className="mt-2 whitespace-pre-wrap font-mono text-[13px] leading-relaxed text-claude-cream">
+        {text}
+      </pre>
+    </div>
+  );
+}
 
 /** Renders the full guide content on the unlocked /success page. */
 export function GuideContent() {
   return (
-    <article className="prose-invert max-w-none">
-      <header className="mb-10 border-b border-white/10 pb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+    <article className="max-w-none">
+      <header className="mb-10 border-b border-claude-line pb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-claude-ink sm:text-4xl">
           {guideMeta.title}
         </h1>
-        <p className="mt-2 text-lg text-indigo-300">{guideMeta.subtitle}</p>
+        <p className="mt-2 text-lg text-claude-coraldark">
+          {guideMeta.subtitle}
+        </p>
       </header>
 
-      <div className="space-y-10">
-        {(sections as Section[]).map((section) => (
+      <div className="space-y-12">
+        {(sections as Section[]).map((section, i) => (
           <section key={section.heading}>
-            <h2 className="text-xl font-semibold text-white sm:text-2xl">
-              {section.heading}
-            </h2>
-            <div className="mt-3 space-y-3">
-              {section.body.map((p, i) => (
-                <p key={i} className="leading-relaxed text-slate-300">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-claude-coral text-sm font-bold text-white">
+                {i + 1}
+              </span>
+              <h2 className="text-xl font-semibold text-claude-ink sm:text-2xl">
+                {section.heading}
+              </h2>
+            </div>
+            <div className="mt-1 h-[3px] w-11 rounded-full bg-claude-coral" />
+
+            <div className="mt-4 space-y-3">
+              {section.body.map((p, j) => (
+                <p key={j} className="leading-relaxed text-claude-ink/90">
                   {p}
                 </p>
               ))}
             </div>
+
             {section.bullets && (
               <ul className="mt-4 space-y-2">
-                {section.bullets.map((b, i) => (
-                  <li key={i} className="flex gap-3 text-slate-300">
-                    <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-indigo-400" />
+                {section.bullets.map((b, j) => (
+                  <li key={j} className="flex gap-3 text-claude-ink/90">
+                    <span className="mt-2 h-1.5 w-1.5 flex-none rounded-[2px] bg-claude-coral" />
                     <span className="leading-relaxed">{b}</span>
                   </li>
                 ))}
               </ul>
             )}
+
+            {section.callout && (
+              <Callout
+                label={section.callout.label}
+                body={section.callout.body}
+              />
+            )}
+            {section.template && (
+              <Template
+                label={section.template.label}
+                text={section.template.text}
+              />
+            )}
           </section>
         ))}
       </div>
 
-      <p className="mt-12 border-t border-white/10 pt-8 text-lg font-medium italic text-slate-200">
-        {closing}
-      </p>
+      <div className="mt-12">
+        <Callout label="Final word" body={closing} />
+      </div>
     </article>
   );
 }

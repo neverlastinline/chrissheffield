@@ -16,17 +16,17 @@ export default async function SuccessPage({
   if (!session) {
     return (
       <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 text-center">
-        <h1 className="text-2xl font-semibold text-white">
+        <h1 className="text-2xl font-semibold text-claude-ink">
           Payment not found
         </h1>
-        <p className="mt-3 text-slate-300">
+        <p className="mt-3 text-claude-ink/80">
           We couldn&apos;t verify a completed payment for this link. If you just
           paid, give it a few seconds and refresh — otherwise head back and try
           again.
         </p>
         <Link
           href="/"
-          className="mt-8 inline-flex items-center rounded-lg bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-400"
+          className="mt-8 inline-flex items-center rounded-lg bg-claude-coral px-6 py-3 font-semibold text-white transition hover:bg-claude-coraldark"
         >
           Back to the guide
         </Link>
@@ -37,18 +37,18 @@ export default async function SuccessPage({
   // Paid — unlock the content and offer the PDF download.
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <div className="mb-10 flex flex-col items-start justify-between gap-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 sm:flex-row sm:items-center">
+      <div className="mb-10 flex flex-col items-start justify-between gap-4 rounded-xl border border-claude-coral/40 bg-claude-card p-5 sm:flex-row sm:items-center">
         <div>
-          <p className="font-semibold text-emerald-300">
+          <p className="font-semibold text-claude-coraldark">
             ✓ Payment confirmed — you&apos;re in.
           </p>
-          <p className="text-sm text-emerald-200/80">
+          <p className="text-sm text-claude-muted">
             Read it below, and download the PDF to keep.
           </p>
         </div>
         <a
           href={`/api/download?session_id=${encodeURIComponent(session.id)}`}
-          className="inline-flex flex-none items-center rounded-lg bg-emerald-500 px-5 py-3 font-semibold text-white transition hover:bg-emerald-400"
+          className="inline-flex flex-none items-center rounded-lg bg-claude-coral px-5 py-3 font-semibold text-white transition hover:bg-claude-coraldark"
         >
           Download PDF
         </a>
@@ -56,14 +56,14 @@ export default async function SuccessPage({
 
       <GuideContent />
 
-      <div className="mt-12 border-t border-white/10 pt-8 text-center">
+      <div className="mt-12 border-t border-claude-line pt-8 text-center">
         <a
           href={`/api/download?session_id=${encodeURIComponent(session.id)}`}
-          className="inline-flex items-center rounded-lg bg-indigo-500 px-6 py-3 font-semibold text-white transition hover:bg-indigo-400"
+          className="inline-flex items-center rounded-lg bg-claude-coral px-6 py-3 font-semibold text-white transition hover:bg-claude-coraldark"
         >
           Download the PDF
         </a>
-        <p className="mt-4 text-sm text-slate-500">
+        <p className="mt-4 text-sm text-claude-muted">
           Bookmark this page to come back to it anytime.
         </p>
       </div>

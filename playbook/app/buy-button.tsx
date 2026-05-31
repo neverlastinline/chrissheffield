@@ -27,12 +27,12 @@ export function BuyButton({ priceLabel }: { priceLabel: string }) {
       <button
         onClick={handleClick}
         disabled={loading}
-        className="inline-flex items-center justify-center rounded-lg bg-indigo-500 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center justify-center rounded-lg bg-claude-coral px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-claude-coral/25 transition hover:bg-claude-coraldark disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Redirecting…" : `Get the Playbook — ${priceLabel}`}
       </button>
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      <p className="text-xs text-slate-500">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <p className="text-xs text-claude-muted">
         Secure one-time payment via Stripe. Instant access + PDF download.
       </p>
     </div>
