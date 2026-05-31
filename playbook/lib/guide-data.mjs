@@ -1,4 +1,4 @@
-// Canonical content for "The AI Coding Playbook".
+// Canonical content for "The Claude Opus 4.8 Playbook".
 // This single source of truth is rendered on the unlocked web page (lib/content.tsx)
 // AND used to generate the downloadable PDF (scripts/generate-pdf.mjs).
 //
@@ -6,104 +6,103 @@
 //     then run `npm run pdf` to regenerate content/guide.pdf.
 
 export const guideMeta = {
-  title: "The AI Coding Playbook",
-  subtitle: "Ship real software fast with AI coding agents",
+  title: "The Claude Opus 4.8 Playbook",
+  subtitle: "Get production-quality work out of Anthropic's most capable model",
   author: "Chris Sheffield",
-  priceLabel: "$19",
+  priceLabel: "$1.99",
   tagline:
-    "A no-fluff field guide to getting production-quality work out of AI coding agents like Claude Code — the workflows, prompts, and guardrails that actually move the needle.",
+    "A no-fluff field guide to coding with Claude Opus 4.8 (claude-opus-4-8) — how to prompt it, run agentic loops, use thinking and prompt caching, and ship real software faster than you thought possible.",
 };
 
 export const sections = [
   {
-    heading: "1. The mental model: you're the lead, the agent is the team",
+    heading: "1. Why Opus 4.8 changes how you work",
     body: [
-      "Stop treating the agent like an autocomplete and start treating it like a fast, eager junior team that never gets tired. Your leverage comes from direction, not typing. The best operators spend their time on three things: framing the problem, reviewing the output, and steering the next step.",
-      "Every session has a loop: state the goal, let the agent explore and propose, review, correct, repeat. The tighter and faster you run that loop, the more you ship. Slow, vague loops are where projects die.",
+      "Claude Opus 4.8 is the most capable model in the Claude 4.x family — the one you reach for when the task is genuinely hard: multi-file refactors, debugging across an unfamiliar codebase, or designing an architecture from a vague brief. It holds far more context coherently than older models, so you can hand it a whole problem instead of spoon-feeding snippets.",
+      "The shift in mindset: stop using it like autocomplete and start using it like a senior engineer you delegate to. Your leverage comes from framing the problem and reviewing the result — not from typing. Opus 4.8 is fast enough (especially in Claude Code's fast mode) that a tight delegate-review loop beats writing the code yourself on anything non-trivial.",
     ],
     bullets: [
-      "Give the agent a clear definition of done before it writes a line.",
-      "Prefer small, verifiable steps over one giant prompt.",
-      "Always read the diff. The agent is fast, not infallible.",
+      "Use Opus 4.8 for the hard 20% — reasoning, architecture, gnarly bugs.",
+      "Reach for a smaller, cheaper model (Haiku/Sonnet) for bulk, simple, or high-volume edits.",
+      "Give it the whole problem and a clear definition of done, then get out of the way.",
     ],
   },
   {
-    heading: "2. Set up the repo so the agent can succeed",
+    heading: "2. Pick the right model for the job",
     body: [
-      "Agents perform dramatically better in a repo that's set up for them. The single highest-ROI move is a short project guide file (e.g. CLAUDE.md or AGENTS.md) at the repo root describing the stack, commands, conventions, and gotchas. This is read on every session and saves you re-explaining context forever.",
+      "The Claude 4.x family is a toolbox, not a single hammer. Knowing the model IDs and their sweet spots saves you both money and latency.",
     ],
     bullets: [
-      "Document the exact commands to install, run, test, and lint.",
-      "List the conventions you care about (naming, file layout, error handling).",
-      "Add a SessionStart hook so tests and linters are ready in every session.",
-      "Keep a 'gotchas' section for the traps that have burned you before.",
+      "Opus 4.8 — `claude-opus-4-8`: deepest reasoning, best for architecture, hard debugging, and long agentic runs.",
+      "Sonnet 4.6 — `claude-sonnet-4-6`: the balanced default for everyday coding and good price/performance.",
+      "Haiku 4.5 — `claude-haiku-4-5-20251001`: fast and cheap for high-volume, well-scoped edits.",
+      "Rule of thumb: prototype the workflow on Opus, then drop to the cheapest model that still passes your tests.",
     ],
   },
   {
-    heading: "3. Prompting patterns that consistently work",
+    heading: "3. Prompting Opus 4.8 so it nails it first try",
     body: [
-      "Vague prompts get vague code. The patterns below convert intent into reliable output. Use them as reusable templates.",
+      "Opus 4.8 rewards clear intent and punishes vagueness less than older models — but the patterns below still convert intent into reliable output. Treat them as reusable templates.",
     ],
     bullets: [
-      "Plan-then-build: ask for a plan first, approve it, then have it execute. Catches bad assumptions before they become code.",
-      "Reference real files: point at existing patterns ('do it like lib/stripe.ts') instead of describing them.",
-      "Constrain the surface: 'only touch these files' keeps changes reviewable.",
-      "Ask for the test alongside the feature — it forces the agent to define behaviour.",
-      "When stuck, ask the agent to explain the failure before fixing it.",
+      "Plan-then-build: ask for a plan, approve it, then have it execute. Catches bad assumptions before they become code.",
+      "Point at real files ('match the style of lib/stripe.ts') instead of describing conventions in prose.",
+      "State the definition of done up front — including the edge cases you care about.",
+      "Constrain the surface ('only touch these files') so the diff stays reviewable.",
+      "Ask for the test alongside the feature; it forces the model to pin down behaviour.",
     ],
   },
   {
-    heading: "4. The review discipline that keeps you out of trouble",
+    heading: "4. Use thinking for the hard problems",
     body: [
-      "Speed without review is how you ship bugs at scale. The goal isn't to read every character — it's to review with intent. Skim for shape, then zoom in on the risky parts: anything touching money, auth, data deletion, or external input.",
+      "Extended thinking lets Opus 4.8 reason through a problem before it answers — and it's the single biggest quality lever on hard tasks. Turn it on for architecture decisions, subtle bugs, math, and anything where a wrong first step cascades.",
+      "But thinking costs tokens and latency, so don't leave it cranked for trivial edits. Match the thinking budget to the difficulty of the task.",
     ],
     bullets: [
-      "Review the diff, not the chat. The diff is the truth.",
-      "Run it. 'It compiles' is not 'it works'.",
-      "Watch for confidently wrong code in unfamiliar APIs — verify against docs.",
-      "Make the agent justify non-obvious choices; if it can't, push back.",
+      "High thinking: architecture, root-causing a heisenbug, security-sensitive logic.",
+      "Low / no thinking: renames, boilerplate, mechanical edits.",
+      "Ask it to explain a failure before fixing it — the reasoning surfaces the real cause.",
     ],
   },
   {
-    heading: "5. Shipping: from working code to live product",
+    heading: "5. Prompt caching: the cost lever everyone misses",
     body: [
-      "Most side projects never ship because the last 20% feels like a wall. Agents flatten that wall: deployment configs, env wiring, payment integration, and landing pages are exactly the kind of well-trodden work they excel at.",
+      "When you build on the Claude API, prompt caching is how you make Opus 4.8 affordable at scale. Cache the stable prefix of your prompt — system instructions, tool definitions, long reference docs, the codebase context — and you pay full price once, then a fraction on every subsequent call that reuses it.",
+      "In agentic loops where the same large context is sent on every turn, caching routinely cuts cost and latency dramatically. Structure your prompts so the unchanging part comes first and the variable part (the user's latest message) comes last.",
     ],
     bullets: [
-      "Get to a deployed URL early — even an ugly one. Momentum compounds.",
-      "Wire payments with a hosted checkout (Stripe Checkout) before building accounts.",
-      "Keep secrets in environment variables, never in the repo.",
-      "Automate the boring path: build, deploy, smoke-test, repeat.",
+      "Put stable content (system prompt, tools, docs) at the front; mark it as a cache breakpoint.",
+      "Keep the per-turn variable content at the end so the cached prefix stays identical.",
+      "Watch your cache-hit rate — a low rate usually means your prefix is changing when it shouldn't.",
     ],
   },
   {
-    heading: "6. The pitfalls that quietly kill momentum",
+    heading: "6. Agentic loops and tool use",
     body: [
-      "Knowing the failure modes is half the battle. These are the ones that cost real time.",
+      "Opus 4.8 shines in agentic setups — give it tools (read files, run commands, search) and a goal, and it'll work through multi-step tasks autonomously. The art is in the guardrails: clear tools, a clear stopping condition, and a human reviewing the diff.",
     ],
     bullets: [
-      "Over-scoping the first version. One feature, shipped, beats ten planned.",
-      "Letting the agent refactor everything at once — changes become unreviewable.",
-      "Trusting generated code in security-sensitive paths without verification.",
-      "No tests, so every change is a gamble. Even one smoke test changes the game.",
-      "Endless polishing instead of putting it in front of real users.",
+      "Give tools precise descriptions — the model picks tools off the description, not the name.",
+      "Let it run small, verifiable steps; review the diff, not the chat transcript.",
+      "Always run the code. 'It compiles' is not 'it works'.",
+      "Be extra careful with anything touching money, auth, or data deletion — verify by hand.",
     ],
   },
   {
-    heading: "7. Your first 48 hours: a concrete plan",
+    heading: "7. Your first 48 hours with Opus 4.8",
     body: [
-      "Theory is cheap. Here's a sequence that takes you from idea to a live, paid product in a weekend.",
+      "Theory is cheap. Here's a sequence that takes you from idea to a live, paid product in a weekend — using Opus 4.8 as your engineering partner.",
     ],
     bullets: [
-      "Hour 0–2: Pick ONE feature someone would pay for. Write the definition of done.",
-      "Hour 2–6: Scaffold the app with the agent; get a deployed URL live.",
-      "Hour 6–12: Build the one feature end-to-end with tests.",
-      "Hour 12–16: Add hosted checkout and gate the value behind payment.",
-      "Hour 16–20: Polish the landing page; write your launch posts.",
-      "Hour 20+: Ship it. Post to one community. Talk to the first user.",
+      "Hour 0–2: Pick ONE feature someone would pay for. Have Opus write the definition of done.",
+      "Hour 2–6: Have it scaffold the app and get a deployed URL live (ugly is fine).",
+      "Hour 6–12: Build the one feature end-to-end with tests, plan-then-build.",
+      "Hour 12–16: Add hosted checkout (Stripe) and gate the value behind payment.",
+      "Hour 16–20: Polish the landing page; have Opus draft your launch posts.",
+      "Hour 20+: Ship it. Post to one community. Talk to your first user.",
     ],
   },
 ];
 
 export const closing =
-  "That's the playbook. The operators who win with AI agents aren't the ones with the cleverest prompts — they're the ones who run a tight loop, review with discipline, and actually ship. Now go build something and charge for it.";
+  "That's the playbook. Opus 4.8 is the most capable coding partner you've ever had — but the people who win with it aren't the ones with the cleverest prompts. They're the ones who delegate clearly, review with discipline, and actually ship. Now go build something and charge for it.";
