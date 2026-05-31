@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Claude Opus 4.8 Playbook — your copy</title>
+<meta name="description" content="A practical, no-fluff field guide to coding with Claude Opus 4.8 — model selection, prompting patterns, extended thinking, prompt caching, agentic loops, and a copy-paste template library you can use today.">
+<meta property="og:title" content="The Claude Opus 4.8 Playbook — Get senior-engineer output from Anthropic's most capable model">
+<meta property="og:description" content="A practical, no-fluff field guide to coding with Claude Opus 4.8 — model selection, prompting patterns, extended thinking, prompt caching, agentic loops, and a copy-paste template library you can use today.">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root{
+    --cream:#F0EEE6;--card:#FAF9F5;--coral:#D97757;--coraldark:#B85C39;
+    --ink:#1F1E1D;--muted:#857F76;--line:#E3DFD4;--dark:#262321;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--cream);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:64px 24px}
+  .badge{display:inline-block;background:var(--coral);color:#fff;font-size:12px;
+    font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:999px}
+  h1{font-size:clamp(34px,6vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:18px 0}
+  .sub{font-size:clamp(18px,3vw,22px);color:var(--coraldark);font-weight:500}
+  .tagline{font-size:18px;color:rgba(31,30,29,.8);margin-top:20px;max-width:620px}
+  .promise{font-style:italic;color:var(--muted);font-size:14px;margin-top:24px;max-width:560px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--coral);
+    color:#fff;font-size:18px;font-weight:700;text-decoration:none;padding:16px 32px;border-radius:10px;
+    box-shadow:0 10px 24px rgba(217,119,87,.28);transition:background .15s}
+  .btn:hover{background:var(--coraldark)}
+  .note{font-size:12px;color:var(--muted);margin-top:12px}
+  .center{text-align:center}
+  .cta{margin-top:40px}
+  section.block{margin-top:72px}
+  h2.kicker{text-align:center;font-size:26px;font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:32px}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}}
+  .item{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px}
+  .num{flex:none;width:26px;height:26px;border-radius:8px;background:var(--coral);color:#fff;
+    font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .item span.t{font-size:14px}
+  .valuecard{margin-top:64px;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;padding:40px;text-align:center}
+  footer{margin-top:80px;border-top:1px solid var(--line);padding-top:32px;text-align:center;
+    color:var(--muted);font-size:14px}
+  /* guide */
+  .gh{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:40px}
+  .gsec{margin-top:48px}
+  .ghead{display:flex;gap:12px;align-items:flex-start}
+  .ghead h3{font-size:clamp(20px,3vw,26px);font-weight:700;line-height:1.25}
+  .rule{height:3px;width:44px;background:var(--coral);border-radius:2px;margin-top:6px}
+  .gsec p{margin-top:14px;color:rgba(31,30,29,.9)}
+  ul.bul{list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:10px}
+  ul.bul li{display:flex;gap:12px}
+  ul.bul li::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--coral);margin-top:9px}
+  .callout{margin:22px 0;background:var(--card);border:1px solid var(--line);
+    border-left:5px solid var(--coral);border-radius:12px;padding:18px 20px}
+  .callout .lab{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--coraldark)}
+  .callout p{margin-top:6px;color:var(--ink)}
+  .tpl{margin:22px 0;background:var(--dark);border-radius:12px;padding:18px 20px}
+  .tpl .lab{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--coral)}
+  .tpl pre{margin-top:10px;color:var(--cream);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.6;white-space:pre-wrap}
+  .banner{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;
+    background:var(--card);border:1px solid rgba(217,119,87,.4);border-radius:12px;padding:20px;margin-bottom:40px}
+  .banner .ok{font-weight:700;color:var(--coraldark)}
+  .banner .small{font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="banner">
+    <div>
+      <div class="ok">✓ Payment confirmed — you're in.</div>
+      <div class="small">Read it below, and download the PDF to keep.</div>
+    </div>
+    <a class="btn" href="guide.pdf" download>Download PDF</a>
+  </div>
+
+  <div class="gh">
+    <h1 style="font-size:clamp(28px,5vw,40px)">The Claude Opus 4.8 Playbook</h1>
+    <p class="sub">Get senior-engineer output from Anthropic's most capable model</p>
+  </div>
+
+  <section class="gsec">
+    <div class="ghead"><div class="num">1</div><h3>Why Opus 4.8 changes how you work</h3></div>
+    <div class="rule"></div>
+    <p>Claude Opus 4.8 is the most capable model in the Claude 4.x family — the one you reach for when the task is genuinely hard: multi-file refactors, debugging across an unfamiliar codebase, or turning a vague brief into an architecture. It holds large amounts of context coherently, so you can hand it a whole problem instead of spoon-feeding snippets.</p>
+<p>The shift in mindset is the whole game: stop using it like autocomplete and start using it like a senior engineer you delegate to. Your leverage comes from framing the problem and reviewing the result — not from typing. Opus 4.8 is fast enough (especially in Claude Code's fast mode) that a tight delegate-and-review loop beats writing the code yourself on anything non-trivial.</p>
+    <ul class="bul"><li>Use Opus 4.8 for the hard 20% — reasoning, architecture, gnarly bugs, long agent runs.</li><li>Hand it the whole problem plus a clear definition of done, then get out of the way.</li><li>Spend your attention on direction and review, where your judgement actually compounds.</li></ul>
+    <div class="callout"><div class="lab">The one-line mental model</div><p>You are the lead engineer. Opus 4.8 is a brilliant, tireless senior who needs a clear brief and an honest code review. Manage it like one.</p></div>
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">2</div><h3>Pick the right model for the job</h3></div>
+    <div class="rule"></div>
+    <p>The Claude 4.x family is a toolbox, not a single hammer. Knowing the model IDs and their sweet spots saves you real money and latency — using Opus for everything is like hiring a principal engineer to rename variables.</p>
+    <ul class="bul"><li>Opus 4.8 — claude-opus-4-8: deepest reasoning. Architecture, hard debugging, long autonomous runs.</li><li>Sonnet 4.6 — claude-sonnet-4-6: the balanced everyday default. Great price/performance for normal coding.</li><li>Haiku 4.5 — claude-haiku-4-5-20251001: fast and cheap. High-volume, well-scoped, mechanical edits.</li><li>Workflow: prototype on Opus to get it right, then drop to the cheapest model that still passes your tests.</li></ul>
+    <div class="callout"><div class="lab">Cost instinct</div><p>Match model to difficulty, not to habit. A mixed pipeline — Opus to plan, Sonnet to build, Haiku to mass-edit — is often both cheaper and faster than Opus-everywhere.</p></div>
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">3</div><h3>Prompting so it lands on the first try</h3></div>
+    <div class="rule"></div>
+    <p>Opus 4.8 rewards clear intent. Vague prompts still get vague code — these patterns convert intent into reliable output. Treat them as reusable templates, not one-off messages.</p>
+    <ul class="bul"><li>Plan-then-build: get a plan, approve it, then execute. Catches bad assumptions before they become code.</li><li>Point at real files ('match the style of lib/stripe.ts') instead of describing conventions in prose.</li><li>State the definition of done up front — including the edge cases you care about.</li><li>Constrain the surface ('only touch these files') so the diff stays reviewable.</li><li>Ask for the test alongside the feature; it forces the model to pin down behaviour.</li></ul>
+    
+    <div class="tpl"><div class="lab">Copy-paste: the reliable feature prompt</div><pre>Goal: &lt;what done looks like, including edge cases&gt;.
+Context: follow the patterns in &lt;real/file/path.ts&gt;.
+Constraints: only modify &lt;these files&gt;. Keep changes small.
+First, give me a short plan. Wait for my OK before writing code.
+Then implement it and add a test that proves the behaviour.</pre></div>
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">4</div><h3>Use extended thinking for the hard problems</h3></div>
+    <div class="rule"></div>
+    <p>Extended thinking lets Opus 4.8 reason through a problem before it answers — and it's the single biggest quality lever on hard tasks. Turn it on for architecture decisions, subtle bugs, math, and anything where a wrong first step cascades into wasted work.</p>
+<p>Thinking costs tokens and latency, so don't leave it cranked for trivial edits. Match the thinking budget to the difficulty of the task in front of you.</p>
+    <ul class="bul"><li>High thinking: architecture, root-causing a heisenbug, security-sensitive logic, tricky algorithms.</li><li>Low / off: renames, boilerplate, formatting, mechanical edits.</li><li>Stuck? Ask it to explain the failure before fixing it — the reasoning usually surfaces the real cause.</li></ul>
+    <div class="callout"><div class="lab">Pro tip</div><p>When a bug resists two fixes, stop patching. Ask: "Explain, step by step, why this is happening before proposing a fix." Thinking turns guesswork into diagnosis.</p></div>
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">5</div><h3>Prompt caching: the cost lever everyone misses</h3></div>
+    <div class="rule"></div>
+    <p>When you build on the Claude API, prompt caching is how you make Opus 4.8 affordable at scale. Cache the stable prefix of your prompt — system instructions, tool definitions, long reference docs, codebase context — and you pay full price once, then a fraction on every subsequent call that reuses it.</p>
+<p>In agentic loops, where the same large context is sent on every turn, caching routinely cuts cost and latency dramatically. The trick is structure: keep the unchanging part at the front and the variable part (the user's latest message) at the very end, so the cached prefix stays byte-for-byte identical.</p>
+    <ul class="bul"><li>Put stable content first (system prompt, tools, docs) and mark a cache breakpoint after it.</li><li>Keep per-turn variable content last so the cached prefix never shifts.</li><li>Watch your cache-hit rate — a low rate almost always means your prefix is changing when it shouldn't.</li></ul>
+    <div class="callout"><div class="lab">Rule of thumb</div><p>Anything you'd send on more than two calls and that doesn't change between them belongs in the cached prefix. Cached reads are a fraction of the price of fresh input tokens.</p></div>
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">6</div><h3>Agentic loops and tool use</h3></div>
+    <div class="rule"></div>
+    <p>Opus 4.8 shines in agentic setups: give it tools (read files, run commands, search the web) and a goal, and it works through multi-step tasks autonomously. The art is in the guardrails — clear tools, a clear stopping condition, and a human reviewing the diff.</p>
+    <ul class="bul"><li>Write precise tool descriptions — the model selects tools off the description, not the name.</li><li>Let it run small, verifiable steps; review the diff, not the chat transcript.</li><li>Always run the code. 'It compiles' is not 'it works'.</li><li>Be extra careful with anything touching money, auth, or data deletion — verify those by hand.</li></ul>
+    <div class="callout"><div class="lab">Guardrail</div><p>Give the agent a budget and a stop condition: 'Make the failing test pass, then stop and show me the diff.' Open-ended autonomy is how small tasks become large, unreviewable ones.</p></div>
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">7</div><h3>Debugging with Opus 4.8</h3></div>
+    <div class="rule"></div>
+    <p>Opus 4.8 is at its best as a diagnostician. The mistake people make is asking for a fix before the model understands the bug. Feed it the evidence and make it reason first.</p>
+    <ul class="bul"><li>Paste the exact error, the failing input, and the relevant code — not a paraphrase.</li><li>Ask for the root cause and two candidate fixes before any code is written.</li><li>Have it add a failing test that reproduces the bug, then make the test pass.</li><li>If the fix doesn't work, give it the new output — never let it guess blind twice.</li></ul>
+    
+    <div class="tpl"><div class="lab">Copy-paste: the debugging prompt</div><pre>Here is the error, the input that triggers it, and the code:
+&lt;paste all three&gt;
+Do not fix it yet. First explain the root cause step by step.
+Then propose two fixes with trade-offs. I'll pick one.
+Finally, add a test that fails before the fix and passes after.</pre></div>
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">8</div><h3>Context management for long sessions</h3></div>
+    <div class="rule"></div>
+    <p>Long agentic sessions drift: the model accumulates context, some of it stale, and quality slowly degrades. Managing context is a skill that separates people who ship from people who fight the tool.</p>
+    <ul class="bul"><li>Keep a short project guide file (CLAUDE.md / AGENTS.md) at the repo root — stack, commands, conventions, gotchas. It's read every session and saves endless re-explaining.</li><li>Start a fresh session for a genuinely new task instead of dragging old context along.</li><li>Summarise decisions into the repo (docs, comments) so the next session inherits them.</li><li>When a session gets confused, reset and re-state the goal cleanly — cheaper than untangling it.</li></ul>
+    <div class="callout"><div class="lab">Highest-ROI setup move</div><p>A 30-line project guide at your repo root is the best hour you'll spend. It makes every future session sharper and is the closest thing to permanent memory you get for free.</p></div>
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">9</div><h3>Common mistakes that quietly burn tokens (and time)</h3></div>
+    <div class="rule"></div>
+    <p>Knowing the failure modes is half the battle. These are the ones that cost real money and momentum.</p>
+    <ul class="bul"><li>Using Opus for everything — pay principal-engineer rates to rename variables.</li><li>No prompt caching in loops — re-paying for the same context on every turn.</li><li>Over-scoping the first version — one shipped feature beats ten planned ones.</li><li>Letting it refactor everything at once until the diff is unreviewable.</li><li>Trusting generated code in security-sensitive paths without verifying it by hand.</li><li>Endless polishing instead of putting it in front of a real user.</li></ul>
+    
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">10</div><h3>Your first 48 hours with Opus 4.8</h3></div>
+    <div class="rule"></div>
+    <p>Theory is cheap. Here's a concrete sequence that takes you from idea to a live, paid product in a weekend — with Opus 4.8 as your engineering partner.</p>
+    <ul class="bul"><li>Hour 0–2: Pick ONE feature someone would pay for. Have Opus write the definition of done.</li><li>Hour 2–6: Have it scaffold the app and get a deployed URL live (ugly is fine).</li><li>Hour 6–12: Build the one feature end-to-end with tests, plan-then-build.</li><li>Hour 12–16: Add hosted checkout (Stripe) and gate the value behind payment.</li><li>Hour 16–20: Polish the landing page; have Opus draft your launch posts.</li><li>Hour 20+: Ship it. Post to one community. Talk to your first user, then iterate.</li></ul>
+    <div class="callout"><div class="lab">Meta note</div><p>The product you're reading this in was built exactly this way — one feature, a Stripe checkout, deployed in an afternoon. The playbook works because it built the playbook.</p></div>
+    
+  </section>
+<section class="gsec">
+    <div class="ghead"><div class="num">11</div><h3>The prompt template library</h3></div>
+    <div class="rule"></div>
+    <p>Keep these where you can grab them. Each is a starting point — adapt the angle brackets to your task.</p>
+    <ul class="bul"><li>Refactor: 'Refactor &lt;file&gt; for &lt;goal&gt;. Keep behaviour identical; the existing tests must still pass. Show the plan first.'</li><li>Explain: 'Walk me through &lt;file/function&gt; like I'm new to this codebase. What would surprise me?'</li><li>Review: 'Review this diff for correctness and edge cases. Focus on anything touching money, auth, or data loss.'</li><li>Tighten: 'This works but feels clunky. Suggest a simpler design with the same behaviour, and why it's better.'</li><li>Ship: 'Write a clear PR description and a launch tweet for this change, in plain language.'</li></ul>
+    
+    
+  </section>
+
+  <div class="callout" style="margin-top:48px"><div class="lab">Final word</div><p><em>That's the playbook. Opus 4.8 is the most capable coding partner you've ever had — but the people who win with it aren't the ones with the cleverest prompts. They're the ones who delegate clearly, review with discipline, manage context, and actually ship. Now go build something and charge for it.</em></p></div>
+
+  <div class="cta center" style="margin-top:32px">
+    <a class="btn" href="guide.pdf" download>Download the PDF</a>
+    <p class="note">Bookmark this page to come back to it anytime.</p>
+  </div>
+</main>
+</body>
+</html>

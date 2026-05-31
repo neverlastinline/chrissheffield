@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Claude Opus 4.8 Playbook — Get senior-engineer output from Anthropic's most capable model</title>
+<meta name="description" content="A practical, no-fluff field guide to coding with Claude Opus 4.8 — model selection, prompting patterns, extended thinking, prompt caching, agentic loops, and a copy-paste template library you can use today.">
+<meta property="og:title" content="The Claude Opus 4.8 Playbook — Get senior-engineer output from Anthropic's most capable model">
+<meta property="og:description" content="A practical, no-fluff field guide to coding with Claude Opus 4.8 — model selection, prompting patterns, extended thinking, prompt caching, agentic loops, and a copy-paste template library you can use today.">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root{
+    --cream:#F0EEE6;--card:#FAF9F5;--coral:#D97757;--coraldark:#B85C39;
+    --ink:#1F1E1D;--muted:#857F76;--line:#E3DFD4;--dark:#262321;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--cream);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:64px 24px}
+  .badge{display:inline-block;background:var(--coral);color:#fff;font-size:12px;
+    font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:999px}
+  h1{font-size:clamp(34px,6vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:18px 0}
+  .sub{font-size:clamp(18px,3vw,22px);color:var(--coraldark);font-weight:500}
+  .tagline{font-size:18px;color:rgba(31,30,29,.8);margin-top:20px;max-width:620px}
+  .promise{font-style:italic;color:var(--muted);font-size:14px;margin-top:24px;max-width:560px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;background:var(--coral);
+    color:#fff;font-size:18px;font-weight:700;text-decoration:none;padding:16px 32px;border-radius:10px;
+    box-shadow:0 10px 24px rgba(217,119,87,.28);transition:background .15s}
+  .btn:hover{background:var(--coraldark)}
+  .note{font-size:12px;color:var(--muted);margin-top:12px}
+  .center{text-align:center}
+  .cta{margin-top:40px}
+  section.block{margin-top:72px}
+  h2.kicker{text-align:center;font-size:26px;font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:32px}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}}
+  .item{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:16px}
+  .num{flex:none;width:26px;height:26px;border-radius:8px;background:var(--coral);color:#fff;
+    font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .item span.t{font-size:14px}
+  .valuecard{margin-top:64px;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;padding:40px;text-align:center}
+  footer{margin-top:80px;border-top:1px solid var(--line);padding-top:32px;text-align:center;
+    color:var(--muted);font-size:14px}
+  /* guide */
+  .gh{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:40px}
+  .gsec{margin-top:48px}
+  .ghead{display:flex;gap:12px;align-items:flex-start}
+  .ghead h3{font-size:clamp(20px,3vw,26px);font-weight:700;line-height:1.25}
+  .rule{height:3px;width:44px;background:var(--coral);border-radius:2px;margin-top:6px}
+  .gsec p{margin-top:14px;color:rgba(31,30,29,.9)}
+  ul.bul{list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:10px}
+  ul.bul li{display:flex;gap:12px}
+  ul.bul li::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--coral);margin-top:9px}
+  .callout{margin:22px 0;background:var(--card);border:1px solid var(--line);
+    border-left:5px solid var(--coral);border-radius:12px;padding:18px 20px}
+  .callout .lab{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--coraldark)}
+  .callout p{margin-top:6px;color:var(--ink)}
+  .tpl{margin:22px 0;background:var(--dark);border-radius:12px;padding:18px 20px}
+  .tpl .lab{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--coral)}
+  .tpl pre{margin-top:10px;color:var(--cream);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.6;white-space:pre-wrap}
+  .banner{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;
+    background:var(--card);border:1px solid rgba(217,119,87,.4);border-radius:12px;padding:20px;margin-bottom:40px}
+  .banner .ok{font-weight:700;color:var(--coraldark)}
+  .banner .small{font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="center">
+    <span class="badge">2026 Edition · Instant access</span>
+    <h1>The Claude Opus 4.8 Playbook</h1>
+    <p class="sub">Get senior-engineer output from Anthropic's most capable model</p>
+    <p class="tagline" style="margin-left:auto;margin-right:auto">A practical, no-fluff field guide to coding with Claude Opus 4.8 — model selection, prompting patterns, extended thinking, prompt caching, agentic loops, and a copy-paste template library you can use today.</p>
+    <div class="cta center">
+    <a class="btn" href="#">Get the Playbook — $1.99</a>
+    <p class="note">Secure one-time payment via Stripe. Instant access + PDF download.</p>
+  </div>
+    <p class="promise" style="margin-left:auto;margin-right:auto">By the end you'll know exactly when to reach for Opus 4.8, how to prompt it so it lands the task on the first try, how to keep your token bill low, and how to go from idea to a live, paid product in a single weekend.</p>
+  </div>
+
+  <section class="block">
+    <h2 class="kicker">What's inside</h2>
+    <div class="grid"><div class="item"><div class="num">1</div><span class="t">Why Opus 4.8 changes how you work</span></div>
+<div class="item"><div class="num">2</div><span class="t">Pick the right model for the job</span></div>
+<div class="item"><div class="num">3</div><span class="t">Prompting so it lands on the first try</span></div>
+<div class="item"><div class="num">4</div><span class="t">Use extended thinking for the hard problems</span></div>
+<div class="item"><div class="num">5</div><span class="t">Prompt caching: the cost lever everyone misses</span></div>
+<div class="item"><div class="num">6</div><span class="t">Agentic loops and tool use</span></div>
+<div class="item"><div class="num">7</div><span class="t">Debugging with Opus 4.8</span></div>
+<div class="item"><div class="num">8</div><span class="t">Context management for long sessions</span></div>
+<div class="item"><div class="num">9</div><span class="t">Common mistakes that quietly burn tokens (and time)</span></div>
+<div class="item"><div class="num">10</div><span class="t">Your first 48 hours with Opus 4.8</span></div>
+<div class="item"><div class="num">11</div><span class="t">The prompt template library</span></div></div>
+  </section>
+
+  <div class="valuecard">
+    <h2 style="font-size:24px;font-weight:700">Stop planning. Start shipping.</h2>
+    <p style="margin-top:12px;color:rgba(31,30,29,.8);max-width:520px;margin-left:auto;margin-right:auto">
+      Everything you need to get senior-engineer output from Claude Opus 4.8 — read it on the web and download the PDF to keep.</p>
+    <div class="cta center">
+    <a class="btn" href="#">Get the Playbook — $1.99</a>
+    <p class="note">Secure one-time payment via Stripe. Instant access + PDF download.</p>
+  </div>
+  </div>
+
+  <footer>© 2026 Chris Sheffield. One-time purchase · Powered by Stripe.</footer>
+</main>
+</body>
+</html>

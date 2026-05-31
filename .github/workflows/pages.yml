@@ -5,6 +5,7 @@ on:
     branches:
       - claude/lions-retro-animation-lk98i
       - claude/afl-nextjs-fullstack-app-NPfwT
+      - claude/knowledge-monetization-stripe-AkmJh
       - main
   workflow_dispatch:
 
