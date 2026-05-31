@@ -4,6 +4,17 @@ A deliberately tiny, single-feature app that sells one piece of knowledge: a
 sales page → **Stripe one-time checkout** → an unlocked web page **+** a
 downloadable PDF. No database, no user accounts, no webhooks.
 
+## Deploy in one click
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fneverlastinline%2Fchrissheffield&root-directory=playbook&env=STRIPE_SECRET_KEY,STRIPE_PRICE_ID&envDescription=Your%20Stripe%20secret%20key%20and%20the%20one-time%20price%20ID%20for%20the%20guide&project-name=ai-coding-playbook&repository-name=ai-coding-playbook)
+
+The button pre-sets the **root directory** (`playbook`) and prompts you for the
+two required env vars. Use these values:
+
+- `STRIPE_PRICE_ID` = `price_1Td0TuLAoTGM5GaZCNE90tqx` (live, $19 USD, one-time)
+- `STRIPE_SECRET_KEY` = your key from https://dashboard.stripe.com/apikeys
+  (`sk_test_…` to rehearse safely, `sk_live_…` to take real money)
+
 ## How it works
 
 The buyer's Stripe **Checkout Session ID** is their access token:
