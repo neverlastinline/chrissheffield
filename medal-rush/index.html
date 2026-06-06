@@ -127,6 +127,56 @@
   .hint { font-size: 12px; opacity: 0.7; margin-top: 18px; color: var(--cream); }
   .err { color: #ff7b7b; max-width: 520px; font-size: 14px; line-height: 1.5; }
 
+  /* secondary / ghost button */
+  .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .ghost-btn {
+    pointer-events: auto; cursor: pointer;
+    font-family: inherit; font-weight: bold; letter-spacing: 2px;
+    font-size: clamp(13px, 3.4vw, 17px);
+    color: var(--gold-lite); background: rgba(5,3,10,0.6);
+    border: 2px solid rgba(245,196,0,0.5); border-radius: 10px; padding: 12px 22px;
+    transition: transform 0.08s, background 0.12s;
+  }
+  .ghost-btn:hover { background: rgba(245,196,0,0.12); }
+  .ghost-btn:active { transform: translateY(2px); }
+
+  /* name entry on game over */
+  .submit-row { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 14px 0 4px; flex-wrap: wrap; }
+  #nameInput {
+    font-family: inherit; font-weight: bold; letter-spacing: 3px; text-transform: uppercase;
+    font-size: 20px; text-align: center; width: 190px; max-width: 60vw;
+    color: var(--cream); background: rgba(5,3,10,0.7);
+    border: 2px solid rgba(245,196,0,0.5); border-radius: 8px; padding: 10px 12px; outline: none;
+  }
+  #nameInput:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(245,196,0,0.4); }
+  #submitBtn {
+    pointer-events: auto; cursor: pointer; font-family: inherit; font-weight: bold; letter-spacing: 2px;
+    font-size: 16px; color: var(--black); background: linear-gradient(180deg, var(--gold-lite), var(--gold));
+    border: none; border-radius: 8px; padding: 11px 18px;
+  }
+  #submitBtn:disabled { filter: grayscale(0.6) brightness(0.8); cursor: default; }
+  .board-status { font-size: 12px; color: var(--cream); opacity: 0.8; letter-spacing: 1px; margin: 6px 0; min-height: 16px; }
+  .board-status .dot-on  { color: var(--green); }
+  .board-status .dot-off { color: #ffb454; }
+
+  /* leaderboard list */
+  .board {
+    list-style: none; margin: 6px 0 14px; padding: 0;
+    width: min(92vw, 380px); max-height: 42vh; overflow-y: auto;
+  }
+  .board li {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px;
+    background: rgba(5,3,10,0.55); border: 2px solid rgba(245,196,0,0.22);
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 6px;
+    font-size: 16px; color: var(--cream);
+  }
+  .board li .rk { font-weight: bold; color: var(--gold-lite); text-align: center; }
+  .board li .nm { text-align: left; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board li .sc { font-weight: bold; color: var(--gold); }
+  .board li.me { border-color: var(--gold); background: rgba(245,196,0,0.12); }
+  .board li.top1 { border-color: rgba(245,196,0,0.7); }
+  .board .empty { text-align: center; opacity: 0.7; border-style: dashed; }
+
   /* mobile joystick */
   #stick-base {
     position: fixed; z-index: 35; width: 120px; height: 120px; border-radius: 50%;
@@ -175,9 +225,20 @@
     <span class="pill">⏱️ 60 seconds</span>
     <span class="pill">⚡ Chain medals for COMBO</span>
   </div>
-  <button class="start-btn" id="startBtn">PRESS START</button>
+  <div class="btn-row">
+    <button class="start-btn" id="startBtn">PRESS START</button>
+    <button class="ghost-btn" id="boardBtn">🏆 LEADERBOARD</button>
+  </div>
   <div class="hint desktop">Move: <b>WASD</b> / Arrow keys &nbsp;·&nbsp; <b>SHIFT</b> to dash</div>
   <div class="hint mobile">Drag anywhere to move · tap+hold edge to dash</div>
+</div>
+
+<!-- Leaderboard viewer (opened from the title screen) -->
+<div class="overlay hidden" id="lbOverlay">
+  <div class="title" style="font-size:clamp(30px,8vw,56px)">🏆 LEADERBOARD</div>
+  <div class="board-status" id="lbStatus">Loading…</div>
+  <ol class="board" id="lbBoard"></ol>
+  <button class="ghost-btn" id="lbBack">BACK</button>
 </div>
 
 <!-- Loading / error screen -->
@@ -194,16 +255,41 @@
   <div class="result-score" id="finalScore">0</div>
   <div class="result-line" id="finalStats"></div>
   <div class="result-line" id="newBest" style="color:var(--green); display:none">★ NEW PERSONAL BEST ★</div>
-  <button class="start-btn" id="againBtn" style="margin-top:18px">PLAY AGAIN</button>
+
+  <div class="submit-row" id="submitRow">
+    <input id="nameInput" maxlength="12" placeholder="YOUR NAME" autocomplete="off" spellcheck="false" />
+    <button id="submitBtn">SUBMIT SCORE</button>
+  </div>
+  <div class="board-status" id="goStatus"></div>
+  <ol class="board" id="goBoard"></ol>
+
+  <button class="start-btn" id="againBtn">PLAY AGAIN</button>
 </div>
 
 <script>
 /* ============================================================================
    MEDAL RUSH 3D
-   A self-contained 3D arcade collect-a-thon. Roll your golden orb around a
-   neon arena and grab as many medals as you can before the clock runs out.
-   Built with three.js (loaded from CDN). No build step.
+   A self-contained 3D arcade collect-a-thon. Steer the Brisbane Lions mascot
+   around a neon arena and grab as many medals as you can before the clock
+   runs out. Built with three.js (loaded from CDN). No build step.
    ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   ONLINE LEADERBOARD CONFIG (Supabase)
+
+   The game works out of the box with a LOCAL leaderboard (saved in this
+   browser). To turn on a real GLOBAL leaderboard shared across players:
+
+     1. Create a free project at https://supabase.com
+     2. In the SQL editor, run the script in  medal-rush/supabase.sql
+        (creates the table + row-level-security policies)
+     3. Project Settings → API → copy the "Project URL" and the public
+        "anon" key, and paste them below. The anon key is SAFE to ship in a
+        public static site — RLS limits it to reading the board and inserting
+        a single score row.
+---------------------------------------------------------------------------- */
+const SUPABASE_URL = "";       // e.g. "https://abcd1234.supabase.co"
+const SUPABASE_ANON_KEY = "";  // e.g. "eyJhbGciOi..."
 
 const THREE_SRCS = [
   "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
@@ -212,6 +298,54 @@ const THREE_SRCS = [
 ];
 
 const $ = (id) => document.getElementById(id);
+
+/* ---- leaderboard: Supabase REST when configured, localStorage otherwise ---- */
+const Leaderboard = {
+  TABLE: "medal_rush_scores",
+  online() { return !!(SUPABASE_URL && SUPABASE_ANON_KEY); },
+  _headers(extra) {
+    return Object.assign({
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY
+    }, extra || {});
+  },
+  async submit(entry) {
+    if (!this.online()) { this._localAdd(entry); return { ok: true, online: false }; }
+    try {
+      const r = await fetch(SUPABASE_URL + "/rest/v1/" + this.TABLE, {
+        method: "POST",
+        headers: this._headers({ "Content-Type": "application/json", "Prefer": "return=minimal" }),
+        body: JSON.stringify({ name: entry.name, score: entry.score, medals: entry.medals, combo: entry.combo })
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return { ok: true, online: true };
+    } catch (e) {
+      this._localAdd(entry);                  // never lose the score
+      return { ok: false, online: false, error: e.message };
+    }
+  },
+  async top(limit = 10) {
+    if (this.online()) {
+      try {
+        const q = "?select=name,score,medals,created_at&order=score.desc&limit=" + limit;
+        const r = await fetch(SUPABASE_URL + "/rest/v1/" + this.TABLE + q, { headers: this._headers() });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return { online: true, rows: await r.json() };
+      } catch (e) {
+        return { online: false, rows: this._localTop(limit), error: e.message };
+      }
+    }
+    return { online: false, rows: this._localTop(limit) };
+  },
+  _localAll() { try { return JSON.parse(localStorage.getItem("medalRushBoard") || "[]"); } catch (e) { return []; } },
+  _localAdd(entry) {
+    const a = this._localAll();
+    a.push({ name: entry.name, score: entry.score, medals: entry.medals, combo: entry.combo, created_at: new Date().toISOString() });
+    a.sort((x, y) => y.score - x.score);
+    try { localStorage.setItem("medalRushBoard", JSON.stringify(a.slice(0, 50))); } catch (e) {}
+  },
+  _localTop(n) { return this._localAll().slice(0, n); }
+};
 
 /* ---- tiny WebAudio SFX (no asset files) ---- */
 const Sound = (() => {
@@ -349,34 +483,108 @@ const Game = {
 
   buildPlayer() {
     const T = this.THREE, s = this.scene;
-    const g = new T.Group();
+    const g = new T.Group();        // root; the lion faces +Z (its local forward)
 
-    const ballGeo = new T.SphereGeometry(0.9, 32, 32);
-    const ballMat = new T.MeshStandardMaterial({ color: 0xf5c400, emissive: 0x7a5800, emissiveIntensity: 0.45, roughness: 0.25, metalness: 0.8 });
-    const ball = new T.Mesh(ballGeo, ballMat);
-    ball.castShadow = true;
-    g.add(ball);
-    this.ballMesh = ball;
+    // the whole lion body sits in an inner group so we can bob it while running
+    const body = new T.Group();
+    g.add(body);
+    this.lionBody = body;
 
-    // a little lion-maroon stripe ring so it reads as a "lions" orb
-    const ring = new T.Mesh(new T.TorusGeometry(0.92, 0.12, 12, 32), new T.MeshStandardMaterial({ color: 0x7a1130, emissive: 0xb3253f, emissiveIntensity: 0.5, roughness: 0.4 }));
-    ring.rotation.x = Math.PI / 2.2;
-    ball.add(ring);
+    const matFur   = new T.MeshStandardMaterial({ color: 0xe3a53a, emissive: 0x5a3a10, emissiveIntensity: 0.22, roughness: 0.6, metalness: 0.08 });
+    const matMane  = new T.MeshStandardMaterial({ color: 0x7a1130, emissive: 0x4a0a1c, emissiveIntensity: 0.4, roughness: 0.7, metalness: 0.1 });
+    const matCream = new T.MeshStandardMaterial({ color: 0xfff3c2, roughness: 0.5 });
+    const matDark  = new T.MeshStandardMaterial({ color: 0x180a10, roughness: 0.4 });
 
-    // glow halo under the player
-    const halo = new T.Mesh(new T.RingGeometry(0.9, 1.6, 32), new T.MeshBasicMaterial({ color: 0xf5c400, transparent: true, opacity: 0.25, side: T.DoubleSide }));
+    // torso
+    const torso = new T.Mesh(new T.SphereGeometry(0.5, 24, 18), matFur);
+    torso.scale.set(0.64, 0.6, 0.98);
+    torso.position.set(0, 0.78, -0.05);
+    torso.castShadow = true;
+    body.add(torso);
+
+    // haunches (a little extra mass at the back)
+    const rump = new T.Mesh(new T.SphereGeometry(0.42, 20, 16), matFur);
+    rump.position.set(0, 0.74, -0.5); rump.castShadow = true;
+    body.add(rump);
+
+    // --- head (its own group, mounted at the front) ---
+    const head = new T.Group();
+    head.position.set(0, 1.02, 0.62);
+    body.add(head);
+    this.lionHead = head;
+
+    const skull = new T.Mesh(new T.SphereGeometry(0.34, 24, 18), matFur);
+    skull.castShadow = true; head.add(skull);
+
+    // mane: a maroon ring plus a crown of spikes
+    const maneRing = new T.Mesh(new T.TorusGeometry(0.42, 0.17, 12, 22), matMane);
+    maneRing.position.z = -0.05; head.add(maneRing);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const spike = new T.Mesh(new T.ConeGeometry(0.1, 0.3, 6), matMane);
+      spike.position.set(Math.cos(a) * 0.46, Math.sin(a) * 0.46, -0.04);
+      spike.rotation.z = a - Math.PI / 2;     // point radially outward
+      head.add(spike);
+    }
+
+    // muzzle + nose
+    const muzzle = new T.Mesh(new T.SphereGeometry(0.2, 16, 12), matCream);
+    muzzle.scale.set(1, 0.82, 0.9); muzzle.position.set(0, -0.05, 0.3); head.add(muzzle);
+    const nose = new T.Mesh(new T.SphereGeometry(0.06, 8, 8), matDark);
+    nose.position.set(0, 0.03, 0.49); head.add(nose);
+
+    // eyes
+    [-0.13, 0.13].forEach(x => {
+      const eye = new T.Mesh(new T.SphereGeometry(0.05, 10, 10), matDark);
+      eye.position.set(x, 0.1, 0.28); head.add(eye);
+    });
+    // ears
+    [-0.19, 0.19].forEach(x => {
+      const ear = new T.Mesh(new T.ConeGeometry(0.1, 0.16, 10), matFur);
+      ear.position.set(x, 0.34, -0.02); head.add(ear);
+      const inner = new T.Mesh(new T.ConeGeometry(0.05, 0.1, 10), matMane);
+      inner.position.set(x, 0.33, 0.0); head.add(inner);
+    });
+
+    // --- legs: four hip-pivoted groups so they can swing while running ---
+    this.legs = [];
+    // order: front-left, front-right, back-left, back-right (front = +Z)
+    const legPos = [[-0.28, 0.5], [0.28, 0.5], [-0.28, -0.55], [0.28, -0.55]];
+    legPos.forEach(([x, z]) => {
+      const hip = new T.Group();
+      hip.position.set(x, 0.5, z);
+      const leg = new T.Mesh(new T.CylinderGeometry(0.12, 0.1, 0.5, 10), matFur);
+      leg.position.y = -0.25; leg.castShadow = true; hip.add(leg);
+      const paw = new T.Mesh(new T.SphereGeometry(0.13, 10, 8), matCream);
+      paw.position.y = -0.5; hip.add(paw);
+      body.add(hip);
+      this.legs.push(hip);
+    });
+
+    // --- tail with a maroon tuft ---
+    const tail = new T.Group();
+    tail.position.set(0, 0.85, -0.7);
+    body.add(tail); this.tail = tail;
+    const tseg = new T.Mesh(new T.CylinderGeometry(0.06, 0.04, 0.6, 8), matFur);
+    tseg.position.set(0, 0.08, -0.18); tseg.rotation.x = Math.PI / 3; tail.add(tseg);
+    const tuft = new T.Mesh(new T.SphereGeometry(0.12, 10, 8), matMane);
+    tuft.position.set(0, 0.26, -0.42); tail.add(tuft);
+
+    // glow halo + warm light under the mascot (kept from the orb version)
+    const halo = new T.Mesh(new T.RingGeometry(0.9, 1.7, 32), new T.MeshBasicMaterial({ color: 0xf5c400, transparent: true, opacity: 0.22, side: T.DoubleSide }));
     halo.rotation.x = -Math.PI / 2; halo.position.y = 0.03;
     g.add(halo);
     this.halo = halo;
 
-    const light = new T.PointLight(0xf5c400, 0.9, 14);
-    light.position.set(0, 1.5, 0);
+    const light = new T.PointLight(0xf5c400, 0.8, 14);
+    light.position.set(0, 1.6, 0);
     g.add(light);
 
-    g.position.set(0, 0.9, 0);
+    g.position.set(0, 0, 0);
     s.add(g);
     this.player = g;
     this.vel = new T.Vector3();
+    this.runPhase = 0;
   },
 
   buildStars() {
@@ -513,7 +721,7 @@ const Game = {
     // reset state
     this.medals.forEach(m => this.scene.remove(m)); this.medals = [];
     this.particles.forEach(p => this.scene.remove(p)); this.particles = [];
-    this.player.position.set(0, 0.9, 0);
+    this.player.position.set(0, 0, 0);
     this.vel.set(0, 0, 0);
     this.score = 0;
     this.medalCount = 0;
@@ -557,6 +765,73 @@ const Game = {
     $("finalStats").textContent = this.medalCount + " medals collected · best combo x" + (this.bestCombo || 0);
     $("newBest").style.display = newBest ? "block" : "none";
     $("gameover").classList.remove("hidden");
+
+    // --- leaderboard submission UI ---
+    this.pendingEntry = { score: this.score, medals: this.medalCount, combo: this.bestCombo || 0 };
+    this.submittedName = null;
+    const canSubmit = this.score > 0;
+    $("submitRow").style.display = canSubmit ? "flex" : "none";
+    const nameInput = $("nameInput"), submitBtn = $("submitBtn");
+    submitBtn.disabled = false; submitBtn.textContent = "SUBMIT SCORE";
+    try { nameInput.value = localStorage.getItem("medalRushName") || ""; } catch (e) {}
+    $("goStatus").innerHTML = Leaderboard.online()
+      ? "Submit your score to the global leaderboard."
+      : "<span class='dot-off'>●</span> Local leaderboard (no online backend configured).";
+    this.refreshBoard("goBoard", "goStatus", this.submittedName);
+  },
+
+  /* fetch the top scores and paint them into a list element */
+  async refreshBoard(boardId, statusId, highlightName) {
+    const ol = $(boardId);
+    ol.innerHTML = "<li class='empty'>Loading…</li>";
+    const { online, rows, error } = await Leaderboard.top(10);
+    this.renderRows(ol, rows, highlightName);
+    if (statusId) {
+      const st = $(statusId);
+      if (online) st.innerHTML = "<span class='dot-on'>●</span> Global leaderboard — live";
+      else if (Leaderboard.online()) st.innerHTML = "<span class='dot-off'>●</span> Couldn't reach the server — showing local scores" + (error ? " (" + error + ")" : "");
+      else st.innerHTML = "<span class='dot-off'>●</span> Local leaderboard (this browser only)";
+    }
+  },
+
+  renderRows(ol, rows, highlightName) {
+    ol.innerHTML = "";
+    if (!rows || !rows.length) { ol.innerHTML = "<li class='empty'>No scores yet — be the first!</li>"; return; }
+    const medals = ["🥇", "🥈", "🥉"];
+    rows.forEach((row, i) => {
+      const li = document.createElement("li");
+      if (i === 0) li.classList.add("top1");
+      if (highlightName && row.name === highlightName) li.classList.add("me");
+      const rank = i < 3 ? medals[i] : (i + 1);
+      const name = String(row.name || "—").slice(0, 12);
+      li.innerHTML = "<span class='rk'>" + rank + "</span>" +
+                     "<span class='nm'>" + this.esc(name) + "</span>" +
+                     "<span class='sc'>" + (row.score | 0) + "</span>";
+      ol.appendChild(li);
+    });
+  },
+
+  esc(str) { return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); },
+
+  async submitScore() {
+    if (!this.pendingEntry) return;
+    const raw = ($("nameInput").value || "").trim().toUpperCase().slice(0, 12) || "ANON";
+    try { localStorage.setItem("medalRushName", raw); } catch (e) {}
+    const submitBtn = $("submitBtn");
+    submitBtn.disabled = true; submitBtn.textContent = "SAVING…";
+    const entry = Object.assign({ name: raw }, this.pendingEntry);
+    const res = await Leaderboard.submit(entry);
+    this.submittedName = raw;
+    this.pendingEntry = null;
+    submitBtn.textContent = res.online ? "SAVED ✓" : (Leaderboard.online() ? "SAVED LOCALLY ✓" : "SAVED ✓");
+    await this.refreshBoard("goBoard", "goStatus", raw);
+  },
+
+  async openLeaderboard() {
+    $("title").classList.add("hidden");
+    $("lbOverlay").classList.remove("hidden");
+    let name = null; try { name = localStorage.getItem("medalRushName"); } catch (e) {}
+    await this.refreshBoard("lbBoard", "lbStatus", name);
   },
 
   showCombo() {
@@ -628,9 +903,20 @@ const Game = {
         if (this.player.position[ax] < -lim) { this.player.position[ax] = -lim; this.vel[ax] *= -0.4; }
       });
 
-      // rolling animation
-      this.ballMesh.rotation.z -= this.vel.x * dt * 1.1;
-      this.ballMesh.rotation.x += this.vel.z * dt * 1.1;
+      // ---- lion run animation: face the direction of travel + gallop ----
+      const speed = Math.hypot(this.vel.x, this.vel.z);
+      if (speed > 0.6) {
+        const desired = Math.atan2(this.vel.x, this.vel.z);   // local +Z is forward
+        let diff = ((desired - this.player.rotation.y + Math.PI) % (Math.PI * 2)) - Math.PI;
+        this.player.rotation.y += diff * Math.min(1, dt * 12);
+      }
+      this.runPhase += dt * (5 + speed * 0.9);
+      const swing = Math.min(speed * 0.07, 0.7);
+      const gait = [0, Math.PI, Math.PI, 0];                  // diagonal gallop
+      this.legs.forEach((hip, i) => { hip.rotation.x = Math.sin(this.runPhase + gait[i]) * swing; });
+      this.lionBody.position.y = Math.abs(Math.sin(this.runPhase)) * 0.06 * Math.min(speed * 0.12, 1);
+      const lean = Math.min(speed * 0.012, 0.18);
+      this.lionBody.rotation.x = -lean;                        // lean into the run
 
       // ---- collisions ----
       for (let i = this.medals.length - 1; i >= 0; i--) {
@@ -677,6 +963,15 @@ const Game = {
 
     // halo pulse
     if (this.halo) this.halo.scale.setScalar(1 + Math.sin(t * 5) * 0.08);
+
+    // lion idle flourishes: tail always wags; when not running, settle the gait
+    if (this.tail) this.tail.rotation.y = Math.sin(t * 4) * 0.35;
+    if (!this.running && this.lionBody) {
+      const ease = Math.min(1, dt * 6);
+      this.legs.forEach(h => { h.rotation.x += (0 - h.rotation.x) * ease; });
+      this.lionBody.rotation.x += (0 - this.lionBody.rotation.x) * ease;
+      this.lionBody.position.y = Math.sin(t * 1.5) * 0.015;   // gentle breathing
+    }
 
     // ---- camera follow (smooth) ----
     const p = this.player.position;
@@ -725,9 +1020,27 @@ async function boot() {
 
 $("startBtn").addEventListener("click", () => { if (Game.ready) Game.start(); });
 $("againBtn").addEventListener("click", () => { if (Game.ready) Game.start(); });
+$("submitBtn").addEventListener("click", () => Game.submitScore());
+$("boardBtn").addEventListener("click", () => { if (Game.ready) Game.openLeaderboard(); });
+$("lbBack").addEventListener("click", () => {
+  $("lbOverlay").classList.add("hidden");
+  $("title").classList.remove("hidden");
+});
+
+// Enter in the name field submits the score (instead of starting a new game)
+$("nameInput").addEventListener("keydown", (e) => {
+  if (e.code === "Enter") { e.preventDefault(); e.stopPropagation(); Game.submitScore(); }
+});
 
 // Allow Space/Enter to start from the title or game-over screens
 window.addEventListener("keydown", (e) => {
+  if (document.activeElement === $("nameInput")) return;            // don't hijack typing
+  if (!$("lbOverlay").classList.contains("hidden")) {              // leaderboard viewer open
+    if (e.code === "Escape" || e.code === "Enter" || e.code === "Space") {
+      e.preventDefault(); $("lbBack").click();
+    }
+    return;
+  }
   if ((e.code === "Space" || e.code === "Enter") && Game.ready && !Game.running) {
     if (!$("title").classList.contains("hidden") || !$("gameover").classList.contains("hidden")) {
       e.preventDefault(); Game.start();
