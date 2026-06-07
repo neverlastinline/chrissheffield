@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="theme-color" content="#05030a" />
+<title>MEDAL RUSH 3D // BRISBANE LIONS</title>
+<style>
+  :root {
+    --maroon: #7a1130;
+    --maroon-lite: #b3253f;
+    --blue:   #102a6b;
+    --blue-lite:#2750c8;
+    --gold:   #f5c400;
+    --gold-lite:#ffe680;
+    --cream:  #fff3c2;
+    --green:  #2ec27e;
+    --black:  #05030a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--black);
+    color: var(--gold);
+    font-family: "Courier New", monospace;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+
+  /* CRT overlay for retro cohesion with the rest of the repo */
+  #app::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 40;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0) 0 2px,
+      rgba(0,0,0,0.22) 2px 3px);
+    mix-blend-mode: multiply;
+  }
+  #app::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 41;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.85) 100%);
+  }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 14px 16px; pointer-events: none;
+    text-shadow: 0 0 6px rgba(0,0,0,0.9);
+  }
+  .cell {
+    background: rgba(5,3,10,0.55);
+    border: 2px solid rgba(245,196,0,0.35);
+    border-radius: 6px;
+    padding: 6px 10px;
+    line-height: 1.15;
+    backdrop-filter: blur(2px);
+  }
+  .cell .label { font-size: 10px; letter-spacing: 2px; color: var(--gold-lite); opacity: 0.8; }
+  .cell .val   { font-size: 22px; font-weight: bold; color: var(--cream); }
+  .hud-left  { display: flex; gap: 8px; }
+  .hud-right { display: flex; gap: 8px; text-align: right; }
+
+  #combo {
+    position: fixed; left: 50%; top: 70px; transform: translateX(-50%);
+    z-index: 30; pointer-events: none; text-align: center;
+    font-size: 30px; font-weight: bold; color: var(--gold-lite);
+    text-shadow: 0 0 12px rgba(245,196,0,0.8), 0 2px 0 #000;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  #combo.show { opacity: 1; }
+
+  /* time bar */
+  #timebar-wrap {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    width: min(70vw, 520px); height: 12px; z-index: 30;
+    border: 2px solid rgba(245,196,0,0.4); border-radius: 8px;
+    background: rgba(5,3,10,0.6); overflow: hidden; pointer-events: none;
+  }
+  #timebar {
+    height: 100%; width: 100%;
+    background: linear-gradient(90deg, var(--green), var(--gold));
+    transition: width 0.1s linear;
+  }
+
+  /* ---------- Overlays ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px;
+    background: radial-gradient(ellipse at center, rgba(16,42,107,0.35), rgba(5,3,10,0.92));
+  }
+  .overlay.hidden { display: none; }
+  .title {
+    font-size: clamp(34px, 9vw, 84px); font-weight: bold; line-height: 0.95;
+    color: var(--gold);
+    text-shadow: 0 0 18px rgba(245,196,0,0.6), 4px 4px 0 var(--maroon), 8px 8px 0 var(--blue);
+    letter-spacing: 2px; margin-bottom: 6px;
+  }
+  .subtitle { font-size: clamp(13px, 3.2vw, 18px); color: var(--cream); opacity: 0.9; margin-bottom: 22px; letter-spacing: 1px; }
+  .pill {
+    display: inline-block; margin: 4px;
+    background: rgba(5,3,10,0.6); border: 2px solid rgba(245,196,0,0.4);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--cream);
+  }
+  .legend { max-width: 480px; margin: 4px auto 24px; opacity: 0.95; }
+  .start-btn {
+    pointer-events: auto; cursor: pointer;
+    font-family: inherit; font-weight: bold; letter-spacing: 2px;
+    font-size: clamp(16px, 4.5vw, 24px);
+    color: var(--black); background: linear-gradient(180deg, var(--gold-lite), var(--gold));
+    border: none; border-radius: 10px; padding: 14px 34px;
+    box-shadow: 0 6px 0 #a98700, 0 10px 22px rgba(0,0,0,0.6);
+    transition: transform 0.08s, box-shadow 0.08s;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #a98700, 0 4px 10px rgba(0,0,0,0.6); }
+  @keyframes pulse { 0%,100%{ filter: brightness(1);} 50%{ filter: brightness(1.18);} }
+
+  .medal-big { font-size: clamp(64px, 18vw, 140px); line-height: 1; margin-bottom: 8px; filter: drop-shadow(0 0 20px rgba(245,196,0,0.5)); }
+  .result-line { font-size: clamp(15px, 4vw, 22px); color: var(--cream); margin: 4px 0; }
+  .result-score { font-size: clamp(40px, 12vw, 80px); font-weight: bold; color: var(--gold-lite); text-shadow: 0 0 16px rgba(245,196,0,0.7); }
+  .hint { font-size: 12px; opacity: 0.7; margin-top: 18px; color: var(--cream); }
+  .err { color: #ff7b7b; max-width: 520px; font-size: 14px; line-height: 1.5; }
+
+  /* secondary / ghost button */
+  .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .ghost-btn {
+    pointer-events: auto; cursor: pointer;
+    font-family: inherit; font-weight: bold; letter-spacing: 2px;
+    font-size: clamp(13px, 3.4vw, 17px);
+    color: var(--gold-lite); background: rgba(5,3,10,0.6);
+    border: 2px solid rgba(245,196,0,0.5); border-radius: 10px; padding: 12px 22px;
+    transition: transform 0.08s, background 0.12s;
+  }
+  .ghost-btn:hover { background: rgba(245,196,0,0.12); }
+  .ghost-btn:active { transform: translateY(2px); }
+
+  /* name entry on game over */
+  .submit-row { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 14px 0 4px; flex-wrap: wrap; }
+  #nameInput {
+    font-family: inherit; font-weight: bold; letter-spacing: 3px; text-transform: uppercase;
+    font-size: 20px; text-align: center; width: 190px; max-width: 60vw;
+    color: var(--cream); background: rgba(5,3,10,0.7);
+    border: 2px solid rgba(245,196,0,0.5); border-radius: 8px; padding: 10px 12px; outline: none;
+  }
+  #nameInput:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(245,196,0,0.4); }
+  #submitBtn {
+    pointer-events: auto; cursor: pointer; font-family: inherit; font-weight: bold; letter-spacing: 2px;
+    font-size: 16px; color: var(--black); background: linear-gradient(180deg, var(--gold-lite), var(--gold));
+    border: none; border-radius: 8px; padding: 11px 18px;
+  }
+  #submitBtn:disabled { filter: grayscale(0.6) brightness(0.8); cursor: default; }
+  .board-status { font-size: 12px; color: var(--cream); opacity: 0.8; letter-spacing: 1px; margin: 6px 0; min-height: 16px; }
+  .board-status .dot-on  { color: var(--green); }
+  .board-status .dot-off { color: #ffb454; }
+
+  /* leaderboard list */
+  .board {
+    list-style: none; margin: 6px 0 14px; padding: 0;
+    width: min(92vw, 380px); max-height: 42vh; overflow-y: auto;
+  }
+  .board li {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px;
+    background: rgba(5,3,10,0.55); border: 2px solid rgba(245,196,0,0.22);
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 6px;
+    font-size: 16px; color: var(--cream);
+  }
+  .board li .rk { font-weight: bold; color: var(--gold-lite); text-align: center; }
+  .board li .nm { text-align: left; letter-spacing: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board li .sc { font-weight: bold; color: var(--gold); }
+  .board li.me { border-color: var(--gold); background: rgba(245,196,0,0.12); }
+  .board li.top1 { border-color: rgba(245,196,0,0.7); }
+  .board .empty { text-align: center; opacity: 0.7; border-style: dashed; }
+
+  /* mobile joystick */
+  #stick-base {
+    position: fixed; z-index: 35; width: 120px; height: 120px; border-radius: 50%;
+    border: 2px solid rgba(245,196,0,0.4); background: rgba(5,3,10,0.4);
+    display: none; pointer-events: none;
+  }
+  #stick-knob {
+    position: absolute; width: 54px; height: 54px; border-radius: 50%;
+    left: 33px; top: 33px;
+    background: radial-gradient(circle at 35% 30%, var(--gold-lite), var(--gold));
+    box-shadow: 0 0 14px rgba(245,196,0,0.6);
+  }
+  @media (hover: none) and (pointer: coarse) { .hint.desktop { display: none; } }
+  @media (hover: hover) { .hint.mobile { display: none; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-left">
+    <div class="cell"><div class="label">SCORE</div><div class="val" id="score">0</div></div>
+    <div class="cell"><div class="label">MEDALS</div><div class="val" id="medals">0</div></div>
+  </div>
+  <div class="hud-right">
+    <div class="cell"><div class="label">TIME</div><div class="val" id="time">60</div></div>
+    <div class="cell"><div class="label">BEST</div><div class="val" id="best">0</div></div>
+  </div>
+</div>
+<div id="combo"></div>
+<div id="timebar-wrap" style="display:none"><div id="timebar"></div></div>
+
+<div id="stick-base"><div id="stick-knob"></div></div>
+
+<!-- Title screen -->
+<div class="overlay" id="title">
+  <div class="title">MEDAL<br>RUSH 3D</div>
+  <div class="subtitle">BRISBANE LIONS // COLLECT-A-THON</div>
+  <div class="legend">
+    <span class="pill">🥇 GOLD = 6</span>
+    <span class="pill">🥈 SILVER = 3</span>
+    <span class="pill">🥉 BRONZE = 1</span>
+  </div>
+  <div class="legend">
+    <span class="pill">⏱️ 60 seconds</span>
+    <span class="pill">⚡ Chain medals for COMBO</span>
+  </div>
+  <div class="btn-row">
+    <button class="start-btn" id="startBtn">PRESS START</button>
+    <button class="ghost-btn" id="boardBtn">🏆 LEADERBOARD</button>
+  </div>
+  <div class="hint desktop">Move: <b>WASD</b> / Arrow keys &nbsp;·&nbsp; <b>SHIFT</b> to dash</div>
+  <div class="hint mobile">Drag anywhere to move · tap+hold edge to dash</div>
+</div>
+
+<!-- Leaderboard viewer (opened from the title screen) -->
+<div class="overlay hidden" id="lbOverlay">
+  <div class="title" style="font-size:clamp(30px,8vw,56px)">🏆 LEADERBOARD</div>
+  <div class="board-status" id="lbStatus">Loading…</div>
+  <ol class="board" id="lbBoard"></ol>
+  <button class="ghost-btn" id="lbBack">BACK</button>
+</div>
+
+<!-- Loading / error screen -->
+<div class="overlay hidden" id="loading">
+  <div class="title" style="font-size:40px">LOADING…</div>
+  <div class="subtitle" id="loadingMsg">Booting the 3D arena</div>
+  <div class="err hidden" id="errMsg"></div>
+</div>
+
+<!-- Game over screen -->
+<div class="overlay hidden" id="gameover">
+  <div class="medal-big" id="rankMedal">🥇</div>
+  <div class="result-line" id="rankLabel">GOLD MEDAL PERFORMANCE</div>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-line" id="finalStats"></div>
+  <div class="result-line" id="newBest" style="color:var(--green); display:none">★ NEW PERSONAL BEST ★</div>
+
+  <div class="submit-row" id="submitRow">
+    <input id="nameInput" maxlength="12" placeholder="YOUR NAME" autocomplete="off" spellcheck="false" />
+    <button id="submitBtn">SUBMIT SCORE</button>
+  </div>
+  <div class="board-status" id="goStatus"></div>
+  <ol class="board" id="goBoard"></ol>
+
+  <button class="start-btn" id="againBtn">PLAY AGAIN</button>
+</div>
+
+<script>
+/* ============================================================================
+   MEDAL RUSH 3D
+   A self-contained 3D arcade collect-a-thon. Steer the Brisbane Lions mascot
+   around a neon arena and grab as many medals as you can before the clock
+   runs out. Built with three.js (loaded from CDN). No build step.
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   ONLINE LEADERBOARD CONFIG (Supabase)
+
+   The game works out of the box with a LOCAL leaderboard (saved in this
+   browser). To turn on a real GLOBAL leaderboard shared across players:
+
+     1. Create a free project at https://supabase.com
+     2. In the SQL editor, run the script in  medal-rush/supabase.sql
+        (creates the table + row-level-security policies)
+     3. Project Settings → API → copy the "Project URL" and the public
+        "anon" key, and paste them below. The anon key is SAFE to ship in a
+        public static site — RLS limits it to reading the board and inserting
+        a single score row.
+---------------------------------------------------------------------------- */
+const SUPABASE_URL = "https://mqhvgejpvpgzkzztqmqx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaHZnZWpwdnBnemt6enRxbXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3MTA3MjcsImV4cCI6MjA5NjI4NjcyN30.uZMSfyzbmEKZV_cz7Vxp1Ed0a6wyGNEblO1gFOKLsWA";
+
+const THREE_SRCS = [
+  "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
+  "https://unpkg.com/three@0.128.0/build/three.min.js",
+  "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"
+];
+
+const $ = (id) => document.getElementById(id);
+
+/* ---- leaderboard: Supabase REST when configured, localStorage otherwise ---- */
+const Leaderboard = {
+  TABLE: "medal_rush_scores",
+  online() { return !!(SUPABASE_URL && SUPABASE_ANON_KEY); },
+  _headers(extra) {
+    return Object.assign({
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY
+    }, extra || {});
+  },
+  async submit(entry) {
+    if (!this.online()) { this._localAdd(entry); return { ok: true, online: false }; }
+    try {
+      const r = await fetch(SUPABASE_URL + "/rest/v1/" + this.TABLE, {
+        method: "POST",
+        headers: this._headers({ "Content-Type": "application/json", "Prefer": "return=minimal" }),
+        body: JSON.stringify({ name: entry.name, score: entry.score, medals: entry.medals, combo: entry.combo })
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return { ok: true, online: true };
+    } catch (e) {
+      this._localAdd(entry);                  // never lose the score
+      return { ok: false, online: false, error: e.message };
+    }
+  },
+  async top(limit = 10) {
+    if (this.online()) {
+      try {
+        const q = "?select=name,score,medals,created_at&order=score.desc&limit=" + limit;
+        const r = await fetch(SUPABASE_URL + "/rest/v1/" + this.TABLE + q, { headers: this._headers() });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return { online: true, rows: await r.json() };
+      } catch (e) {
+        return { online: false, rows: this._localTop(limit), error: e.message };
+      }
+    }
+    return { online: false, rows: this._localTop(limit) };
+  },
+  _localAll() { try { return JSON.parse(localStorage.getItem("medalRushBoard") || "[]"); } catch (e) { return []; } },
+  _localAdd(entry) {
+    const a = this._localAll();
+    a.push({ name: entry.name, score: entry.score, medals: entry.medals, combo: entry.combo, created_at: new Date().toISOString() });
+    a.sort((x, y) => y.score - x.score);
+    try { localStorage.setItem("medalRushBoard", JSON.stringify(a.slice(0, 50))); } catch (e) {}
+  },
+  _localTop(n) { return this._localAll().slice(0, n); }
+};
+
+/* ---- tiny WebAudio SFX (no asset files) ---- */
+const Sound = (() => {
+  let ctx = null;
+  const ensure = () => { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ctx; };
+  const blip = (freq, dur, type = "square", gain = 0.12, slideTo = null) => {
+    const c = ensure(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, c.currentTime);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime + dur);
+    g.gain.setValueAtTime(gain, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime + dur);
+  };
+  return {
+    resume: () => { const c = ensure(); if (c && c.state === "suspended") c.resume(); },
+    pickup: (tier) => { const base = tier === 3 ? 660 : tier === 2 ? 520 : 420; blip(base, 0.12, "square", 0.14, base * 1.8); },
+    combo: (n) => blip(440 + Math.min(n, 12) * 60, 0.1, "sawtooth", 0.1, 1200),
+    start: () => { blip(330, 0.1, "square", 0.12, 660); setTimeout(() => blip(660, 0.14, "square", 0.12, 990), 110); },
+    over: () => { blip(440, 0.18, "sawtooth", 0.12, 220); setTimeout(() => blip(220, 0.4, "sawtooth", 0.12, 110), 160); }
+  };
+})();
+
+/* ---- load three.js with fallbacks ---- */
+function loadThree() {
+  return new Promise((resolve, reject) => {
+    let i = 0;
+    const tryNext = () => {
+      if (window.THREE) return resolve();
+      if (i >= THREE_SRCS.length) return reject(new Error("Could not load the 3D engine (three.js)."));
+      const s = document.createElement("script");
+      s.src = THREE_SRCS[i++];
+      s.onload = () => resolve();
+      s.onerror = tryNext;
+      document.head.appendChild(s);
+    };
+    tryNext();
+  });
+}
+
+/* ============================ GAME ============================ */
+const Game = {
+  GAME_TIME: 60,
+  ARENA: 26,            // half-extent of the play field
+  ready: false,
+  running: false,
+  best: 0,
+
+  init(THREE) {
+    this.THREE = THREE;
+    const app = $("app");
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    app.appendChild(renderer.domElement);
+    this.renderer = renderer;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05030a);
+    scene.fog = new THREE.FogExp2(0x0a0618, 0.018);
+    this.scene = scene;
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 400);
+    this.camera = camera;
+
+    this.buildLights();
+    this.buildArena();
+    this.buildPlayer();
+    this.buildStars();
+
+    this.medals = [];
+    this.particles = [];
+    this.clock = new THREE.Clock();
+
+    this.keys = {};
+    this.bindInput();
+
+    window.addEventListener("resize", () => this.onResize());
+    this.ready = true;
+
+    // idle render so the title screen has a live 3D backdrop
+    this.animate();
+  },
+
+  buildLights() {
+    const T = this.THREE, s = this.scene;
+    s.add(new T.AmbientLight(0x33406b, 0.9));
+    const key = new T.DirectionalLight(0xfff0c0, 1.15);
+    key.position.set(18, 34, 12);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    const d = 40;
+    key.shadow.camera.left = -d; key.shadow.camera.right = d;
+    key.shadow.camera.top = d; key.shadow.camera.bottom = -d;
+    key.shadow.camera.far = 120;
+    s.add(key);
+    const rimA = new T.PointLight(0x2750c8, 0.8, 120); rimA.position.set(-30, 16, -20); s.add(rimA);
+    const rimB = new T.PointLight(0xb3253f, 0.7, 120); rimB.position.set(30, 16, 22); s.add(rimB);
+  },
+
+  buildArena() {
+    const T = this.THREE, s = this.scene, A = this.ARENA;
+
+    // floor
+    const floorMat = new T.MeshStandardMaterial({ color: 0x0c1330, roughness: 0.85, metalness: 0.2 });
+    const floor = new T.Mesh(new T.BoxGeometry(A * 2, 1, A * 2), floorMat);
+    floor.position.y = -0.5; floor.receiveShadow = true;
+    s.add(floor);
+
+    // neon grid on top of the floor
+    const grid = new T.GridHelper(A * 2, A, 0xf5c400, 0x2750c8);
+    grid.material.opacity = 0.35; grid.material.transparent = true;
+    grid.position.y = 0.02;
+    s.add(grid);
+
+    // glowing border walls (maroon + gold trim)
+    const wallMat = new T.MeshStandardMaterial({ color: 0x7a1130, emissive: 0x3a0716, emissiveIntensity: 0.6, roughness: 0.4, metalness: 0.3 });
+    const trimMat = new T.MeshStandardMaterial({ color: 0xf5c400, emissive: 0xf5c400, emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.5 });
+    const mkWall = (w, d, x, z) => {
+      const wall = new T.Mesh(new T.BoxGeometry(w, 2, d), wallMat);
+      wall.position.set(x, 1, z); wall.castShadow = true; wall.receiveShadow = true; s.add(wall);
+      const trim = new T.Mesh(new T.BoxGeometry(w, 0.25, d), trimMat);
+      trim.position.set(x, 2.1, z); s.add(trim);
+    };
+    const t = 1;
+    mkWall(A * 2 + t * 2, t, 0,  A + t / 2);
+    mkWall(A * 2 + t * 2, t, 0, -A - t / 2);
+    mkWall(t, A * 2 + t * 2,  A + t / 2, 0);
+    mkWall(t, A * 2 + t * 2, -A - t / 2, 0);
+  },
+
+  buildPlayer() {
+    const T = this.THREE, s = this.scene;
+    const g = new T.Group();        // root; the lion faces +Z (its local forward)
+
+    // the whole lion body sits in an inner group so we can bob it while running
+    const body = new T.Group();
+    g.add(body);
+    this.lionBody = body;
+
+    const matFur   = new T.MeshStandardMaterial({ color: 0xe3a53a, emissive: 0x5a3a10, emissiveIntensity: 0.22, roughness: 0.6, metalness: 0.08 });
+    const matMane  = new T.MeshStandardMaterial({ color: 0x7a1130, emissive: 0x4a0a1c, emissiveIntensity: 0.4, roughness: 0.7, metalness: 0.1 });
+    const matCream = new T.MeshStandardMaterial({ color: 0xfff3c2, roughness: 0.5 });
+    const matDark  = new T.MeshStandardMaterial({ color: 0x180a10, roughness: 0.4 });
+
+    // torso
+    const torso = new T.Mesh(new T.SphereGeometry(0.5, 24, 18), matFur);
+    torso.scale.set(0.64, 0.6, 0.98);
+    torso.position.set(0, 0.78, -0.05);
+    torso.castShadow = true;
+    body.add(torso);
+
+    // haunches (a little extra mass at the back)
+    const rump = new T.Mesh(new T.SphereGeometry(0.42, 20, 16), matFur);
+    rump.position.set(0, 0.74, -0.5); rump.castShadow = true;
+    body.add(rump);
+
+    // --- head (its own group, mounted at the front) ---
+    const head = new T.Group();
+    head.position.set(0, 1.02, 0.62);
+    body.add(head);
+    this.lionHead = head;
+
+    const skull = new T.Mesh(new T.SphereGeometry(0.34, 24, 18), matFur);
+    skull.castShadow = true; head.add(skull);
+
+    // mane: a maroon ring plus a crown of spikes
+    const maneRing = new T.Mesh(new T.TorusGeometry(0.42, 0.17, 12, 22), matMane);
+    maneRing.position.z = -0.05; head.add(maneRing);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const spike = new T.Mesh(new T.ConeGeometry(0.1, 0.3, 6), matMane);
+      spike.position.set(Math.cos(a) * 0.46, Math.sin(a) * 0.46, -0.04);
+      spike.rotation.z = a - Math.PI / 2;     // point radially outward
+      head.add(spike);
+    }
+
+    // muzzle + nose
+    const muzzle = new T.Mesh(new T.SphereGeometry(0.2, 16, 12), matCream);
+    muzzle.scale.set(1, 0.82, 0.9); muzzle.position.set(0, -0.05, 0.3); head.add(muzzle);
+    const nose = new T.Mesh(new T.SphereGeometry(0.06, 8, 8), matDark);
+    nose.position.set(0, 0.03, 0.49); head.add(nose);
+
+    // eyes
+    [-0.13, 0.13].forEach(x => {
+      const eye = new T.Mesh(new T.SphereGeometry(0.05, 10, 10), matDark);
+      eye.position.set(x, 0.1, 0.28); head.add(eye);
+    });
+    // ears
+    [-0.19, 0.19].forEach(x => {
+      const ear = new T.Mesh(new T.ConeGeometry(0.1, 0.16, 10), matFur);
+      ear.position.set(x, 0.34, -0.02); head.add(ear);
+      const inner = new T.Mesh(new T.ConeGeometry(0.05, 0.1, 10), matMane);
+      inner.position.set(x, 0.33, 0.0); head.add(inner);
+    });
+
+    // --- legs: four hip-pivoted groups so they can swing while running ---
+    this.legs = [];
+    // order: front-left, front-right, back-left, back-right (front = +Z)
+    const legPos = [[-0.28, 0.5], [0.28, 0.5], [-0.28, -0.55], [0.28, -0.55]];
+    legPos.forEach(([x, z]) => {
+      const hip = new T.Group();
+      hip.position.set(x, 0.5, z);
+      const leg = new T.Mesh(new T.CylinderGeometry(0.12, 0.1, 0.5, 10), matFur);
+      leg.position.y = -0.25; leg.castShadow = true; hip.add(leg);
+      const paw = new T.Mesh(new T.SphereGeometry(0.13, 10, 8), matCream);
+      paw.position.y = -0.5; hip.add(paw);
+      body.add(hip);
+      this.legs.push(hip);
+    });
+
+    // --- tail with a maroon tuft ---
+    const tail = new T.Group();
+    tail.position.set(0, 0.85, -0.7);
+    body.add(tail); this.tail = tail;
+    const tseg = new T.Mesh(new T.CylinderGeometry(0.06, 0.04, 0.6, 8), matFur);
+    tseg.position.set(0, 0.08, -0.18); tseg.rotation.x = Math.PI / 3; tail.add(tseg);
+    const tuft = new T.Mesh(new T.SphereGeometry(0.12, 10, 8), matMane);
+    tuft.position.set(0, 0.26, -0.42); tail.add(tuft);
+
+    // glow halo + warm light under the mascot (kept from the orb version)
+    const halo = new T.Mesh(new T.RingGeometry(0.9, 1.7, 32), new T.MeshBasicMaterial({ color: 0xf5c400, transparent: true, opacity: 0.22, side: T.DoubleSide }));
+    halo.rotation.x = -Math.PI / 2; halo.position.y = 0.03;
+    g.add(halo);
+    this.halo = halo;
+
+    const light = new T.PointLight(0xf5c400, 0.8, 14);
+    light.position.set(0, 1.6, 0);
+    g.add(light);
+
+    g.position.set(0, 0, 0);
+    s.add(g);
+    this.player = g;
+    this.vel = new T.Vector3();
+    this.runPhase = 0;
+  },
+
+  buildStars() {
+    const T = this.THREE;
+    const geo = new T.BufferGeometry();
+    const n = 600, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const r = 120 + Math.random() * 140;
+      const th = Math.random() * Math.PI * 2;
+      const ph = Math.acos(2 * Math.random() - 1);
+      pos[i*3]   = r * Math.sin(ph) * Math.cos(th);
+      pos[i*3+1] = Math.abs(r * Math.cos(ph)) * 0.6 + 6;
+      pos[i*3+2] = r * Math.sin(ph) * Math.sin(th);
+    }
+    geo.setAttribute("position", new T.BufferAttribute(pos, 3));
+    const mat = new T.PointsMaterial({ color: 0xffe680, size: 1.1, sizeAttenuation: true, transparent: true, opacity: 0.8 });
+    this.scene.add(new T.Points(geo, mat));
+  },
+
+  /* ---- medals ---- */
+  TIERS: {
+    1: { color: 0xcd7f32, emissive: 0x5a3210, points: 1, weight: 0.5,  label: "🥉" }, // bronze
+    2: { color: 0xc8d0d8, emissive: 0x5a6068, points: 3, weight: 0.32, label: "🥈" }, // silver
+    3: { color: 0xf5c400, emissive: 0x7a5800, points: 6, weight: 0.18, label: "🥇" }  // gold
+  },
+
+  pickTier() {
+    const r = Math.random();
+    if (r < this.TIERS[3].weight) return 3;
+    if (r < this.TIERS[3].weight + this.TIERS[2].weight) return 2;
+    return 1;
+  },
+
+  spawnMedal(tier) {
+    const T = this.THREE;
+    tier = tier || this.pickTier();
+    const spec = this.TIERS[tier];
+    const g = new T.Group();
+
+    const disc = new T.Mesh(
+      new T.CylinderGeometry(0.7, 0.7, 0.16, 28),
+      new T.MeshStandardMaterial({ color: spec.color, emissive: spec.emissive, emissiveIntensity: 0.6, roughness: 0.25, metalness: 0.95 })
+    );
+    disc.rotation.x = Math.PI / 2;
+    disc.castShadow = true;
+    g.add(disc);
+
+    // raised rim
+    const rim = new T.Mesh(
+      new T.TorusGeometry(0.7, 0.1, 10, 28),
+      new T.MeshStandardMaterial({ color: spec.color, emissive: spec.emissive, emissiveIntensity: 0.8, roughness: 0.2, metalness: 1 })
+    );
+    g.add(rim);
+
+    // ribbon
+    const ribbon = new T.Mesh(
+      new T.BoxGeometry(0.5, 0.5, 0.05),
+      new T.MeshStandardMaterial({ color: 0x2750c8, emissive: 0x102a6b, emissiveIntensity: 0.5, roughness: 0.6 })
+    );
+    ribbon.position.y = 0.95;
+    g.add(ribbon);
+
+    const A = this.ARENA - 2.5;
+    let x, z;
+    do {
+      x = (Math.random() * 2 - 1) * A;
+      z = (Math.random() * 2 - 1) * A;
+    } while (Math.hypot(x - this.player.position.x, z - this.player.position.z) < 4);
+
+    g.position.set(x, 1.1, z);
+    g.userData = { tier, spec, spin: Math.random() * Math.PI * 2, bob: Math.random() * Math.PI * 2 };
+    this.scene.add(g);
+    this.medals.push(g);
+  },
+
+  burst(pos, color, count = 18) {
+    const T = this.THREE;
+    for (let i = 0; i < count; i++) {
+      const m = new T.Mesh(
+        new T.BoxGeometry(0.16, 0.16, 0.16),
+        new T.MeshBasicMaterial({ color })
+      );
+      m.position.copy(pos);
+      const a = Math.random() * Math.PI * 2, up = Math.random() * 6 + 3, sp = Math.random() * 6 + 2;
+      m.userData = { v: new T.Vector3(Math.cos(a) * sp, up, Math.sin(a) * sp), life: 1 };
+      this.scene.add(m);
+      this.particles.push(m);
+    }
+  },
+
+  /* ---- input ---- */
+  bindInput() {
+    window.addEventListener("keydown", (e) => {
+      this.keys[e.code] = true;
+      if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+    }, { passive: false });
+    window.addEventListener("keyup", (e) => { this.keys[e.code] = false; });
+
+    // touch joystick
+    this.touch = { active: false, dx: 0, dy: 0, dash: false };
+    const base = $("stick-base"), knob = $("stick-knob");
+    const canvas = this.renderer.domElement;
+    const start = (x, y) => {
+      this.touch.active = true;
+      this.touch.ox = x; this.touch.oy = y;
+      base.style.display = "block";
+      base.style.left = (x - 60) + "px";
+      base.style.top = (y - 60) + "px";
+      knob.style.left = "33px"; knob.style.top = "33px";
+    };
+    const move = (x, y) => {
+      if (!this.touch.active) return;
+      let dx = x - this.touch.ox, dy = y - this.touch.oy;
+      const len = Math.hypot(dx, dy), max = 46;
+      const cl = Math.min(len, max);
+      const nx = len ? dx / len : 0, ny = len ? dy / len : 0;
+      knob.style.left = (33 + nx * cl) + "px";
+      knob.style.top = (33 + ny * cl) + "px";
+      this.touch.dx = nx * (cl / max);
+      this.touch.dy = ny * (cl / max);
+      this.touch.dash = len > max * 0.95;
+    };
+    const end = () => { this.touch.active = false; this.touch.dx = 0; this.touch.dy = 0; this.touch.dash = false; base.style.display = "none"; };
+
+    canvas.addEventListener("touchstart", (e) => { const t = e.touches[0]; start(t.clientX, t.clientY); }, { passive: true });
+    canvas.addEventListener("touchmove",  (e) => { const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: true });
+    canvas.addEventListener("touchend", end, { passive: true });
+    canvas.addEventListener("touchcancel", end, { passive: true });
+  },
+
+  /* ---- lifecycle ---- */
+  start() {
+    Sound.resume(); Sound.start();
+    // reset state
+    this.medals.forEach(m => this.scene.remove(m)); this.medals = [];
+    this.particles.forEach(p => this.scene.remove(p)); this.particles = [];
+    this.player.position.set(0, 0, 0);
+    this.vel.set(0, 0, 0);
+    this.score = 0;
+    this.medalCount = 0;
+    this.combo = 0;
+    this.comboTimer = 0;
+    this.timeLeft = this.GAME_TIME;
+    this.spawnCooldown = 0;
+
+    for (let i = 0; i < 9; i++) this.spawnMedal();
+
+    $("score").textContent = "0";
+    $("medals").textContent = "0";
+    $("time").textContent = this.GAME_TIME;
+    $("best").textContent = this.best;
+    $("hud").style.display = "flex";
+    $("timebar-wrap").style.display = "block";
+    $("title").classList.add("hidden");
+    $("gameover").classList.add("hidden");
+
+    this.running = true;
+  },
+
+  end() {
+    this.running = false;
+    Sound.over();
+    $("hud").style.display = "none";
+    $("timebar-wrap").style.display = "none";
+    $("combo").classList.remove("show");
+
+    let newBest = false;
+    if (this.score > this.best) { this.best = this.score; newBest = true; try { localStorage.setItem("medalRushBest", String(this.best)); } catch (e) {} }
+
+    // rank by score thresholds
+    let medal = "🥉", label = "BRONZE — keep training!";
+    if (this.score >= 180) { medal = "🥇"; label = "GOLD MEDAL PERFORMANCE!"; }
+    else if (this.score >= 100) { medal = "🥈"; label = "SILVER — so close to gold!"; }
+
+    $("rankMedal").textContent = medal;
+    $("rankLabel").textContent = label;
+    $("finalScore").textContent = this.score;
+    $("finalStats").textContent = this.medalCount + " medals collected · best combo x" + (this.bestCombo || 0);
+    $("newBest").style.display = newBest ? "block" : "none";
+    $("gameover").classList.remove("hidden");
+
+    // --- leaderboard submission UI ---
+    this.pendingEntry = { score: this.score, medals: this.medalCount, combo: this.bestCombo || 0 };
+    this.submittedName = null;
+    const canSubmit = this.score > 0;
+    $("submitRow").style.display = canSubmit ? "flex" : "none";
+    const nameInput = $("nameInput"), submitBtn = $("submitBtn");
+    submitBtn.disabled = false; submitBtn.textContent = "SUBMIT SCORE";
+    try { nameInput.value = localStorage.getItem("medalRushName") || ""; } catch (e) {}
+    $("goStatus").innerHTML = Leaderboard.online()
+      ? "Submit your score to the global leaderboard."
+      : "<span class='dot-off'>●</span> Local leaderboard (no online backend configured).";
+    this.refreshBoard("goBoard", "goStatus", this.submittedName);
+  },
+
+  /* fetch the top scores and paint them into a list element */
+  async refreshBoard(boardId, statusId, highlightName) {
+    const ol = $(boardId);
+    ol.innerHTML = "<li class='empty'>Loading…</li>";
+    const { online, rows, error } = await Leaderboard.top(10);
+    this.renderRows(ol, rows, highlightName);
+    if (statusId) {
+      const st = $(statusId);
+      if (online) st.innerHTML = "<span class='dot-on'>●</span> Global leaderboard — live";
+      else if (Leaderboard.online()) st.innerHTML = "<span class='dot-off'>●</span> Couldn't reach the server — showing local scores" + (error ? " (" + error + ")" : "");
+      else st.innerHTML = "<span class='dot-off'>●</span> Local leaderboard (this browser only)";
+    }
+  },
+
+  renderRows(ol, rows, highlightName) {
+    ol.innerHTML = "";
+    if (!rows || !rows.length) { ol.innerHTML = "<li class='empty'>No scores yet — be the first!</li>"; return; }
+    const medals = ["🥇", "🥈", "🥉"];
+    rows.forEach((row, i) => {
+      const li = document.createElement("li");
+      if (i === 0) li.classList.add("top1");
+      if (highlightName && row.name === highlightName) li.classList.add("me");
+      const rank = i < 3 ? medals[i] : (i + 1);
+      const name = String(row.name || "—").slice(0, 12);
+      li.innerHTML = "<span class='rk'>" + rank + "</span>" +
+                     "<span class='nm'>" + this.esc(name) + "</span>" +
+                     "<span class='sc'>" + (row.score | 0) + "</span>";
+      ol.appendChild(li);
+    });
+  },
+
+  esc(str) { return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); },
+
+  async submitScore() {
+    if (!this.pendingEntry) return;
+    const raw = ($("nameInput").value || "").trim().toUpperCase().slice(0, 12) || "ANON";
+    try { localStorage.setItem("medalRushName", raw); } catch (e) {}
+    const submitBtn = $("submitBtn");
+    submitBtn.disabled = true; submitBtn.textContent = "SAVING…";
+    const entry = Object.assign({ name: raw }, this.pendingEntry);
+    const res = await Leaderboard.submit(entry);
+    this.submittedName = raw;
+    this.pendingEntry = null;
+    submitBtn.textContent = res.online ? "SAVED ✓" : (Leaderboard.online() ? "SAVED LOCALLY ✓" : "SAVED ✓");
+    await this.refreshBoard("goBoard", "goStatus", raw);
+  },
+
+  async openLeaderboard() {
+    $("title").classList.add("hidden");
+    $("lbOverlay").classList.remove("hidden");
+    let name = null; try { name = localStorage.getItem("medalRushName"); } catch (e) {}
+    await this.refreshBoard("lbBoard", "lbStatus", name);
+  },
+
+  showCombo() {
+    const el = $("combo");
+    if (this.combo >= 2) { el.textContent = "COMBO x" + this.combo + "!"; el.classList.add("show"); }
+    else el.classList.remove("show");
+  },
+
+  collect(medal) {
+    const { tier, spec } = medal.userData;
+    this.combo += 1;
+    this.comboTimer = 2.2;
+    this.bestCombo = Math.max(this.bestCombo || 0, this.combo);
+    const mult = Math.min(this.combo, 8);
+    const gained = spec.points * mult;
+    this.score += gained;
+    this.medalCount += 1;
+
+    this.burst(medal.position, spec.color, tier === 3 ? 26 : 18);
+    this.scene.remove(medal);
+    this.medals.splice(this.medals.indexOf(medal), 1);
+
+    Sound.pickup(tier);
+    if (this.combo >= 2) Sound.combo(this.combo);
+
+    $("score").textContent = this.score;
+    $("medals").textContent = this.medalCount;
+    this.showCombo();
+
+    // keep the arena populated
+    this.spawnMedal();
+  },
+
+  update(dt) {
+    const T = this.THREE;
+
+    if (this.running) {
+      // ---- movement (camera-relative) ----
+      let ix = 0, iz = 0;
+      if (this.keys["KeyW"] || this.keys["ArrowUp"]) iz -= 1;
+      if (this.keys["KeyS"] || this.keys["ArrowDown"]) iz += 1;
+      if (this.keys["KeyA"] || this.keys["ArrowLeft"]) ix -= 1;
+      if (this.keys["KeyD"] || this.keys["ArrowRight"]) ix += 1;
+      let dash = this.keys["ShiftLeft"] || this.keys["ShiftRight"];
+
+      if (this.touch.active) { ix += this.touch.dx; iz += this.touch.dy; dash = dash || this.touch.dash; }
+
+      const il = Math.hypot(ix, iz);
+      if (il > 1) { ix /= il; iz /= il; }
+
+      const accel = (dash ? 95 : 60);
+      this.vel.x += ix * accel * dt;
+      this.vel.z += iz * accel * dt;
+
+      // friction + clamp
+      const drag = Math.pow(0.0009, dt);
+      this.vel.x *= drag; this.vel.z *= drag;
+      const maxSpeed = dash ? 26 : 18;
+      const sp = Math.hypot(this.vel.x, this.vel.z);
+      if (sp > maxSpeed) { this.vel.x *= maxSpeed / sp; this.vel.z *= maxSpeed / sp; }
+
+      this.player.position.x += this.vel.x * dt;
+      this.player.position.z += this.vel.z * dt;
+
+      // walls
+      const lim = this.ARENA - 1;
+      ["x","z"].forEach(ax => {
+        if (this.player.position[ax] > lim) { this.player.position[ax] = lim; this.vel[ax] *= -0.4; }
+        if (this.player.position[ax] < -lim) { this.player.position[ax] = -lim; this.vel[ax] *= -0.4; }
+      });
+
+      // ---- lion run animation: face the direction of travel + gallop ----
+      const speed = Math.hypot(this.vel.x, this.vel.z);
+      if (speed > 0.6) {
+        const desired = Math.atan2(this.vel.x, this.vel.z);   // local +Z is forward
+        let diff = ((desired - this.player.rotation.y + Math.PI) % (Math.PI * 2)) - Math.PI;
+        this.player.rotation.y += diff * Math.min(1, dt * 12);
+      }
+      this.runPhase += dt * (5 + speed * 0.9);
+      const swing = Math.min(speed * 0.07, 0.7);
+      const gait = [0, Math.PI, Math.PI, 0];                  // diagonal gallop
+      this.legs.forEach((hip, i) => { hip.rotation.x = Math.sin(this.runPhase + gait[i]) * swing; });
+      this.lionBody.position.y = Math.abs(Math.sin(this.runPhase)) * 0.06 * Math.min(speed * 0.12, 1);
+      const lean = Math.min(speed * 0.012, 0.18);
+      this.lionBody.rotation.x = -lean;                        // lean into the run
+
+      // ---- collisions ----
+      for (let i = this.medals.length - 1; i >= 0; i--) {
+        const m = this.medals[i];
+        const d = Math.hypot(m.position.x - this.player.position.x, m.position.z - this.player.position.z);
+        if (d < 1.7) this.collect(m);
+      }
+
+      // ---- combo decay ----
+      if (this.combo > 0) {
+        this.comboTimer -= dt;
+        if (this.comboTimer <= 0) { this.combo = 0; this.showCombo(); }
+      }
+
+      // ---- timer ----
+      this.timeLeft -= dt;
+      if (this.timeLeft <= 0) { this.timeLeft = 0; this.end(); }
+      $("time").textContent = Math.ceil(this.timeLeft);
+      $("timebar").style.width = (this.timeLeft / this.GAME_TIME * 100) + "%";
+      $("timebar").style.background = this.timeLeft < 10
+        ? "linear-gradient(90deg,#b3253f,#f5c400)"
+        : "linear-gradient(90deg,#2ec27e,#f5c400)";
+    }
+
+    // ---- medal idle spin/bob (always) ----
+    const t = this.clock ? this.clock.elapsedTime : 0;
+    this.medals.forEach(m => {
+      m.rotation.y += dt * 1.6;
+      m.position.y = 1.1 + Math.sin(t * 2 + m.userData.bob) * 0.18;
+    });
+
+    // ---- particles ----
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.userData.life -= dt * 1.6;
+      p.userData.v.y -= 20 * dt;
+      p.position.addScaledVector(p.userData.v, dt);
+      p.rotation.x += dt * 8; p.rotation.y += dt * 6;
+      p.material.opacity = Math.max(p.userData.life, 0);
+      p.material.transparent = true;
+      p.scale.setScalar(Math.max(p.userData.life, 0.01));
+      if (p.userData.life <= 0) { this.scene.remove(p); this.particles.splice(i, 1); }
+    }
+
+    // halo pulse
+    if (this.halo) this.halo.scale.setScalar(1 + Math.sin(t * 5) * 0.08);
+
+    // lion idle flourishes: tail always wags; when not running, settle the gait
+    if (this.tail) this.tail.rotation.y = Math.sin(t * 4) * 0.35;
+    if (!this.running && this.lionBody) {
+      const ease = Math.min(1, dt * 6);
+      this.legs.forEach(h => { h.rotation.x += (0 - h.rotation.x) * ease; });
+      this.lionBody.rotation.x += (0 - this.lionBody.rotation.x) * ease;
+      this.lionBody.position.y = Math.sin(t * 1.5) * 0.015;   // gentle breathing
+    }
+
+    // ---- camera follow (smooth) ----
+    const p = this.player.position;
+    const desired = new T.Vector3(p.x, 18, p.z + 20);
+    if (!this.running) { // gentle orbit on the menu
+      const a = t * 0.12;
+      desired.set(Math.sin(a) * 24, 16, Math.cos(a) * 24);
+    }
+    this.camera.position.lerp(desired, 1 - Math.pow(0.0001, dt));
+    this.camera.lookAt(this.running ? p.x : 0, this.running ? 1 : 1.5, this.running ? p.z : 0);
+  },
+
+  animate() {
+    requestAnimationFrame(() => this.animate());
+    const dt = Math.min(this.clock.getDelta(), 0.05);
+    this.update(dt);
+    this.renderer.render(this.scene, this.camera);
+  },
+
+  onResize() {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+};
+
+/* ============================ BOOT ============================ */
+async function boot() {
+  $("title").classList.add("hidden");
+  $("loading").classList.remove("hidden");
+  try {
+    await loadThree();
+    Game.init(window.THREE);
+    try { Game.best = parseInt(localStorage.getItem("medalRushBest") || "0", 10) || 0; } catch (e) {}
+    $("best").textContent = Game.best;
+    $("loading").classList.add("hidden");
+    $("title").classList.remove("hidden");
+  } catch (err) {
+    $("loadingMsg").textContent = "Couldn't start the 3D arena.";
+    const e = $("errMsg");
+    e.classList.remove("hidden");
+    e.innerHTML = (err && err.message ? err.message : "Unknown error") +
+      "<br><br>This game loads three.js from a CDN — check your network connection and reload.";
+  }
+}
+
+$("startBtn").addEventListener("click", () => { if (Game.ready) Game.start(); });
+$("againBtn").addEventListener("click", () => { if (Game.ready) Game.start(); });
+$("submitBtn").addEventListener("click", () => Game.submitScore());
+$("boardBtn").addEventListener("click", () => { if (Game.ready) Game.openLeaderboard(); });
+$("lbBack").addEventListener("click", () => {
+  $("lbOverlay").classList.add("hidden");
+  $("title").classList.remove("hidden");
+});
+
+// Enter in the name field submits the score (instead of starting a new game)
+$("nameInput").addEventListener("keydown", (e) => {
+  if (e.code === "Enter") { e.preventDefault(); e.stopPropagation(); Game.submitScore(); }
+});
+
+// Allow Space/Enter to start from the title or game-over screens
+window.addEventListener("keydown", (e) => {
+  if (document.activeElement === $("nameInput")) return;            // don't hijack typing
+  if (!$("lbOverlay").classList.contains("hidden")) {              // leaderboard viewer open
+    if (e.code === "Escape" || e.code === "Enter" || e.code === "Space") {
+      e.preventDefault(); $("lbBack").click();
+    }
+    return;
+  }
+  if ((e.code === "Space" || e.code === "Enter") && Game.ready && !Game.running) {
+    if (!$("title").classList.contains("hidden") || !$("gameover").classList.contains("hidden")) {
+      e.preventDefault(); Game.start();
+    }
+  }
+});
+
+boot();
+</script>
+</body>
+</html>

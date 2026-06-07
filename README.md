@@ -7,6 +7,14 @@ HTML/CSS/JS in one file, no build step, no dependencies — runs straight from a
 
 ![Game style: 1980s arcade, CRT scanlines, synthwave grid, pixel-art lion mascot, four white goal posts at the horizon, oscillating power and aim meters at the bottom.](#)
 
+> 🥇 **New:** [**Medal Rush 3D**](medal-rush/) — a single-file 3D arcade
+> collect-a-thon. Roll a glowing orb around a neon arena and grab medals
+> against the clock. ([play it](https://neverlastinline.github.io/chrissheffield/medal-rush/) · [details](medal-rush/README.md))
+
+> 🌼 **Also new:** [**Mid Century Flower**](mid-century-flower/) — a single-file
+> gallery of atomic-age botanical art. Geometric blooms in mustard, burnt orange
+> and teal, hand-drawn in pure SVG. ([view it](https://neverlastinline.github.io/chrissheffield/mid-century-flower/) · [details](mid-century-flower/README.md))
+
 ## How to play
 
 You get 10 set shots at goal. The shots get progressively harder.

@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mid Century Flower — Atomic-Age Botanical Art</title>
+<meta name="description" content="Mid Century Flower: a small gallery of hand-drawn, atomic-age botanical art. Geometric blooms, warm palettes, no photographs — every piece is pure vector." />
+<style>
+  :root {
+    --ink:      #2b2118;
+    --paper:    #f4ead6;
+    --paper-2:  #efe1c6;
+    --cream:    #fbf4e3;
+    --mustard:  #e3a92c;
+    --mustard-d:#c8861a;
+    --orange:   #d2592b;
+    --rust:     #9c3d20;
+    --teal:     #2f6f6a;
+    --teal-d:   #1f4f4b;
+    --sage:     #7d8c4e;
+    --olive:    #57632e;
+    --pink:     #d98a87;
+    --plum:     #6b3a52;
+    --sky:      #6fa8a3;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* subtle paper grain */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    opacity: .5;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,.35) 0, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(0,0,0,.04) 0, transparent 45%);
+  }
+
+  a { color: inherit; }
+
+  h1, h2, h3 { font-weight: 800; letter-spacing: -.01em; line-height: 1.05; }
+
+  .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- NAV ---------- */
+  header.nav {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--teal);
+    color: var(--cream);
+    border-bottom: 4px solid var(--ink);
+  }
+  .nav-inner {
+    max-width: 1100px; margin: 0 auto; padding: 14px 24px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: 15px; }
+  .brand svg { display: block; }
+  .nav-links { margin-left: auto; display: flex; gap: 22px; }
+  .nav-links a {
+    text-decoration: none; text-transform: uppercase; letter-spacing: .14em;
+    font-size: 12px; font-weight: 700; opacity: .85; padding: 4px 0;
+    border-bottom: 2px solid transparent; transition: .15s;
+  }
+  .nav-links a:hover { opacity: 1; border-bottom-color: var(--mustard); }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    background:
+      radial-gradient(circle at 78% 38%, var(--mustard) 0 90px, transparent 92px),
+      linear-gradient(180deg, var(--paper-2), var(--paper));
+    border-bottom: 4px solid var(--ink);
+    overflow: hidden;
+  }
+  .hero-inner {
+    display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px;
+    align-items: center; padding: 64px 24px 56px;
+  }
+  .eyebrow {
+    display: inline-block; text-transform: uppercase; letter-spacing: .26em;
+    font-size: 12px; font-weight: 700; color: var(--rust);
+    border: 2px solid var(--rust); padding: 6px 12px; border-radius: 40px;
+    margin-bottom: 22px;
+  }
+  .hero h1 { font-size: clamp(40px, 7vw, 78px); margin: 0 0 18px; }
+  .hero h1 .a { color: var(--orange); }
+  .hero h1 .b { color: var(--teal); }
+  .hero p.lead { font-size: 19px; line-height: 1.55; max-width: 46ch; margin: 0 0 28px; color: #4a3c2e; }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .1em; font-size: 13px;
+    padding: 14px 22px; border: 3px solid var(--ink); border-radius: 4px;
+    box-shadow: 4px 4px 0 var(--ink); transition: transform .1s, box-shadow .1s;
+  }
+  .btn:active { transform: translate(4px,4px); box-shadow: 0 0 0 var(--ink); }
+  .btn.primary { background: var(--orange); color: var(--cream); }
+  .btn.ghost { background: var(--cream); color: var(--ink); }
+  .hero-art { display: flex; justify-content: center; }
+  .hero-art svg { width: 100%; max-width: 380px; height: auto; filter: drop-shadow(6px 8px 0 rgba(43,33,24,.18)); }
+
+  /* ---------- MARQUEE STRIP ---------- */
+  .strip {
+    background: var(--ink); color: var(--cream); overflow: hidden;
+    border-bottom: 4px solid var(--ink);
+  }
+  .strip-track {
+    display: flex; gap: 40px; white-space: nowrap;
+    padding: 12px 0; font-size: 13px; letter-spacing: .26em; text-transform: uppercase; font-weight: 700;
+    animation: slide 26s linear infinite;
+  }
+  .strip-track span { opacity: .9; }
+  .strip-track .dot { color: var(--mustard); }
+  @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ---------- GALLERY ---------- */
+  section { padding: 72px 0; }
+  .sec-head { text-align: center; margin-bottom: 44px; }
+  .sec-head .kicker { text-transform: uppercase; letter-spacing: .28em; font-size: 12px; font-weight: 700; color: var(--teal); }
+  .sec-head h2 { font-size: clamp(30px, 5vw, 46px); margin: 10px 0 0; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .card {
+    background: var(--cream);
+    border: 3px solid var(--ink);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 6px 6px 0 rgba(43,33,24,.16);
+    transition: transform .14s ease, box-shadow .14s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 8px 12px 0 rgba(43,33,24,.22); }
+  .frame { aspect-ratio: 1 / 1; display: block; }
+  .frame svg { width: 100%; height: 100%; display: block; }
+  .caption { padding: 16px 18px 18px; border-top: 3px solid var(--ink); }
+  .caption h3 { font-size: 19px; margin: 0 0 4px; }
+  .caption .meta { font-size: 12px; text-transform: uppercase; letter-spacing: .16em; color: var(--rust); font-weight: 700; }
+  .caption p { font-size: 14px; line-height: 1.5; margin: 8px 0 0; color: #4a3c2e; }
+
+  /* ---------- ABOUT ---------- */
+  .about { background: var(--teal-d); color: var(--cream); border-top: 4px solid var(--ink); border-bottom: 4px solid var(--ink); }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .about h2 { font-size: clamp(28px, 4.4vw, 42px); margin: 0 0 18px; }
+  .about p { font-size: 16px; line-height: 1.7; color: #e8e0cf; margin: 0 0 16px; max-width: 52ch; }
+  .pills { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  .pill { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; font-weight: 700;
+          padding: 8px 14px; border: 2px solid var(--mustard); color: var(--mustard); border-radius: 40px; }
+  .about-art { display: flex; justify-content: center; }
+  .about-art svg { width: 100%; max-width: 360px; height: auto; }
+
+  /* ---------- FOOTER ---------- */
+  footer.foot { background: var(--paper-2); padding: 40px 0; text-align: center; }
+  footer.foot .seed { margin: 0 auto 16px; display: block; }
+  footer.foot p { margin: 6px 0; font-size: 13px; color: #5a4a39; }
+  footer.foot a.home { color: var(--rust); font-weight: 700; text-decoration: none; }
+  footer.foot a.home:hover { text-decoration: underline; }
+
+  @media (max-width: 860px) {
+    .hero-inner { grid-template-columns: 1fr; text-align: center; }
+    .hero p.lead { margin-left: auto; margin-right: auto; }
+    .cta-row { justify-content: center; }
+    .hero-art { order: -1; }
+    .about-grid { grid-template-columns: 1fr; }
+    .about-art { order: -1; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 540px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ====================== NAV ====================== -->
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true">
+        <g fill="none" stroke="#fbf4e3" stroke-width="3">
+          <circle cx="20" cy="20" r="6" fill="#e3a92c" stroke="none"/>
+          <path d="M20 14V3M20 26v11M14 20H3M26 20h11M15 15 7 7M25 25l8 8M25 15l8-8M15 25 7 33"/>
+        </g>
+      </svg>
+      Mid&nbsp;Century&nbsp;Flower
+    </div>
+    <nav class="nav-links">
+      <a href="#gallery">Gallery</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ====================== HERO ====================== -->
+<div class="hero">
+  <div class="hero-inner wrap" style="padding-left:0;padding-right:0;">
+    <div>
+      <span class="eyebrow">Atomic-Age Botanical Art</span>
+      <h1>Blooms with a <span class="a">geometric</span> <span class="b">soul.</span></h1>
+      <p class="lead">A tiny gallery of mid-century modern flower art — hand-drawn in pure vector,
+        all warm mustard, burnt orange and teal. No photographs. Just shapes, doing their thing.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="#gallery">View the gallery</a>
+        <a class="btn ghost" href="#about">The idea</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <!-- HERO FLOWER: big atomic starburst bloom -->
+      <svg viewBox="0 0 300 300" role="img" aria-label="A large geometric mid-century flower with petals radiating from a starburst center.">
+        <defs>
+          <clipPath id="hc"><circle cx="150" cy="150" r="150"/></clipPath>
+        </defs>
+        <g clip-path="url(#hc)">
+          <rect width="300" height="300" fill="#fbf4e3"/>
+          <!-- radiating petals -->
+          <g transform="translate(150 150)">
+            <g fill="#d2592b" stroke="#2b2118" stroke-width="3">
+              <g id="petalset">
+                <path d="M0 -34 C 26 -86, 26 -132, 0 -150 C -26 -132, -26 -86, 0 -34 Z"/>
+              </g>
+              <use href="#petalset" transform="rotate(45)"/>
+              <use href="#petalset" transform="rotate(90)"/>
+              <use href="#petalset" transform="rotate(135)"/>
+              <use href="#petalset" transform="rotate(180)"/>
+              <use href="#petalset" transform="rotate(225)"/>
+              <use href="#petalset" transform="rotate(270)"/>
+              <use href="#petalset" transform="rotate(315)"/>
+            </g>
+            <!-- inner petals -->
+            <g fill="#e3a92c" stroke="#2b2118" stroke-width="3">
+              <g id="petal2"><path d="M0 -22 C 16 -52, 16 -78, 0 -92 C -16 -78, -16 -52, 0 -22 Z"/></g>
+              <use href="#petal2" transform="rotate(45)"/>
+              <use href="#petal2" transform="rotate(90)"/>
+              <use href="#petal2" transform="rotate(135)"/>
+              <use href="#petal2" transform="rotate(180)"/>
+              <use href="#petal2" transform="rotate(225)"/>
+              <use href="#petal2" transform="rotate(270)"/>
+              <use href="#petal2" transform="rotate(315)"/>
+            </g>
+            <!-- center -->
+            <circle r="30" fill="#2f6f6a" stroke="#2b2118" stroke-width="3"/>
+            <circle r="14" fill="#fbf4e3" stroke="#2b2118" stroke-width="3"/>
+            <circle r="4" fill="#2b2118"/>
+          </g>
+        </g>
+        <circle cx="150" cy="150" r="148" fill="none" stroke="#2b2118" stroke-width="3"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== STRIP ====================== -->
+<div class="strip" aria-hidden="true">
+  <div class="strip-track">
+    <span>Geometric Blooms</span><span class="dot">✦</span>
+    <span>Warm Palettes</span><span class="dot">✦</span>
+    <span>Pure Vector</span><span class="dot">✦</span>
+    <span>Atomic Age</span><span class="dot">✦</span>
+    <span>Hand-Drawn Shapes</span><span class="dot">✦</span>
+    <span>Geometric Blooms</span><span class="dot">✦</span>
+    <span>Warm Palettes</span><span class="dot">✦</span>
+    <span>Pure Vector</span><span class="dot">✦</span>
+    <span>Atomic Age</span><span class="dot">✦</span>
+    <span>Hand-Drawn Shapes</span><span class="dot">✦</span>
+  </div>
+</div>
+
+<!-- ====================== GALLERY ====================== -->
+<section id="gallery">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">The Collection</div>
+      <h2>Six prints, one mood</h2>
+    </div>
+    <div class="grid">
+
+      <!-- 1: Daisy wheel -->
+      <article class="card">
+        <div class="frame">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Daisy Wheel: a white daisy with rounded petals on mustard.">
+            <rect width="200" height="200" fill="#e3a92c"/>
+            <g transform="translate(100 100)">
+              <g fill="#fbf4e3" stroke="#2b2118" stroke-width="2.5">
+                <g id="d1"><ellipse cx="0" cy="-58" rx="14" ry="32"/></g>
+                <use href="#d1" transform="rotate(30)"/><use href="#d1" transform="rotate(60)"/>
+                <use href="#d1" transform="rotate(90)"/><use href="#d1" transform="rotate(120)"/>
+                <use href="#d1" transform="rotate(150)"/><use href="#d1" transform="rotate(180)"/>
+                <use href="#d1" transform="rotate(210)"/><use href="#d1" transform="rotate(240)"/>
+                <use href="#d1" transform="rotate(270)"/><use href="#d1" transform="rotate(300)"/>
+                <use href="#d1" transform="rotate(330)"/>
+              </g>
+              <circle r="26" fill="#d2592b" stroke="#2b2118" stroke-width="2.5"/>
+              <circle r="13" fill="#9c3d20" stroke="#2b2118" stroke-width="2.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="caption"><div class="meta">No. 01 · Screenprint</div><h3>Daisy Wheel</h3>
+          <p>Eleven petals, one stubborn sun. The friendliest shape in the room.</p></div>
+      </article>
+
+      <!-- 2: Tulip trio -->
+      <article class="card">
+        <div class="frame">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Tulip Trio: three geometric tulips on tall stems.">
+            <rect width="200" height="200" fill="#2f6f6a"/>
+            <g stroke="#2b2118" stroke-width="2.5" stroke-linecap="round">
+              <path d="M70 175V110" fill="none"/><path d="M100 178V96" fill="none"/><path d="M130 175V110" fill="none"/>
+              <path d="M70 140c-16-6-20-20-18-30 12 2 20 12 18 30z" fill="#7d8c4e"/>
+              <path d="M130 145c16-6 20-20 18-30-12 2-20 12-18 30z" fill="#7d8c4e"/>
+            </g>
+            <g stroke="#2b2118" stroke-width="2.5">
+              <path d="M55 70c0-14 12-26 15 6 3-32 15-20 15-6 0 16-12 30-15 34-3-4-15-18-15-34z" fill="#e3a92c" transform="translate(0 40)"/>
+              <path d="M85 50c0-16 14-30 15 6 1-36 15-22 15-6 0 18-14 34-15 38-1-4-15-20-15-38z" fill="#d2592b"/>
+              <path d="M115 70c0-14 12-26 15 6 3-32 15-20 15-6 0 16-12 30-15 34-3-4-15-18-15-34z" fill="#d98a87" transform="translate(0 40)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="caption"><div class="meta">No. 02 · Cut Paper</div><h3>Tulip Trio</h3>
+          <p>Three tulips standing very politely in a teal field.</p></div>
+      </article>
+
+      <!-- 3: Atomic burst -->
+      <article class="card">
+        <div class="frame">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Atomic Burst: a starburst flower with thin spokes and dot tips.">
+            <rect width="200" height="200" fill="#fbf4e3"/>
+            <g transform="translate(100 100)" stroke="#2b2118" stroke-width="2.5">
+              <g>
+                <g id="spk"><line x1="0" y1="0" x2="0" y2="-78"/><circle cx="0" cy="-82" r="6" fill="#d2592b"/></g>
+                <use href="#spk" transform="rotate(30)"/><use href="#spk" transform="rotate(60)"/>
+                <use href="#spk" transform="rotate(90)"/><use href="#spk" transform="rotate(120)"/>
+                <use href="#spk" transform="rotate(150)"/><use href="#spk" transform="rotate(180)"/>
+                <use href="#spk" transform="rotate(210)"/><use href="#spk" transform="rotate(240)"/>
+                <use href="#spk" transform="rotate(270)"/><use href="#spk" transform="rotate(300)"/>
+                <use href="#spk" transform="rotate(330)"/>
+              </g>
+              <circle r="34" fill="#2f6f6a"/>
+              <g fill="#e3a92c" stroke="none">
+                <circle cx="0" cy="-18" r="5"/><circle cx="17" cy="6" r="5"/><circle cx="-17" cy="6" r="5"/>
+              </g>
+              <circle r="8" fill="#fbf4e3" stroke="#2b2118" stroke-width="2.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="caption"><div class="meta">No. 03 · Litho</div><h3>Atomic Burst</h3>
+          <p>The spark that started the whole atomic-age flower craze.</p></div>
+      </article>
+
+      <!-- 4: Poppy field rows -->
+      <article class="card">
+        <div class="frame">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Poppy Rows: rows of simple round poppies on a rust background.">
+            <rect width="200" height="200" fill="#9c3d20"/>
+            <g stroke="#2b2118" stroke-width="2.5">
+              <g id="pp">
+                <circle r="16" fill="#e3a92c"/>
+                <circle r="6" fill="#2b2118" stroke="none"/>
+              </g>
+              <use href="#pp" transform="translate(45 50)"/>
+              <use href="#pp" transform="translate(100 42)"/>
+              <use href="#pp" transform="translate(155 52)"/>
+              <use href="#pp" transform="translate(40 100)"/>
+              <use href="#pp" transform="translate(100 100)"/>
+              <use href="#pp" transform="translate(160 100)"/>
+              <use href="#pp" transform="translate(45 150)"/>
+              <use href="#pp" transform="translate(100 158)"/>
+              <use href="#pp" transform="translate(155 148)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="caption"><div class="meta">No. 04 · Pattern</div><h3>Poppy Rows</h3>
+          <p>Nine little poppies that refuse to break formation.</p></div>
+      </article>
+
+      <!-- 5: Stem & leaf minimal -->
+      <article class="card">
+        <div class="frame">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Single Stem: one tall geometric flower with a long curved stem.">
+            <rect width="200" height="200" fill="#efe1c6"/>
+            <path d="M100 185 C 100 130, 70 120, 88 80" fill="none" stroke="#57632e" stroke-width="4" stroke-linecap="round"/>
+            <path d="M93 130c-22-4-30-18-30-30 16-2 30 10 30 30z" fill="#7d8c4e" stroke="#2b2118" stroke-width="2.5"/>
+            <path d="M99 105c18-6 30 2 34 12-14 8-30 4-34-12z" fill="#7d8c4e" stroke="#2b2118" stroke-width="2.5"/>
+            <g transform="translate(88 64)">
+              <g fill="#6b3a52" stroke="#2b2118" stroke-width="2.5">
+                <g id="t5"><ellipse cx="0" cy="-26" rx="11" ry="22"/></g>
+                <use href="#t5" transform="rotate(72)"/><use href="#t5" transform="rotate(144)"/>
+                <use href="#t5" transform="rotate(216)"/><use href="#t5" transform="rotate(288)"/>
+              </g>
+              <circle r="13" fill="#e3a92c" stroke="#2b2118" stroke-width="2.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="caption"><div class="meta">No. 05 · Ink</div><h3>Single Stem</h3>
+          <p>Negative space doing most of the heavy lifting. Very restful.</p></div>
+      </article>
+
+      <!-- 6: Concentric flower -->
+      <article class="card">
+        <div class="frame">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Sun Disc: concentric scalloped rings forming a flower.">
+            <rect width="200" height="200" fill="#6b3a52"/>
+            <g transform="translate(100 100)">
+              <g fill="#d98a87" stroke="#2b2118" stroke-width="2.5">
+                <g id="sc"><circle cx="0" cy="-70" r="13"/></g>
+                <use href="#sc" transform="rotate(40)"/><use href="#sc" transform="rotate(80)"/>
+                <use href="#sc" transform="rotate(120)"/><use href="#sc" transform="rotate(160)"/>
+                <use href="#sc" transform="rotate(200)"/><use href="#sc" transform="rotate(240)"/>
+                <use href="#sc" transform="rotate(280)"/><use href="#sc" transform="rotate(320)"/>
+              </g>
+              <circle r="56" fill="#e3a92c" stroke="#2b2118" stroke-width="2.5"/>
+              <circle r="40" fill="#d2592b" stroke="#2b2118" stroke-width="2.5"/>
+              <circle r="24" fill="#2f6f6a" stroke="#2b2118" stroke-width="2.5"/>
+              <circle r="9" fill="#fbf4e3" stroke="#2b2118" stroke-width="2.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="caption"><div class="meta">No. 06 · Gouache</div><h3>Sun Disc</h3>
+          <p>Rings inside rings. Stare too long and it starts to hum.</p></div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ====================== ABOUT ====================== -->
+<section id="about" class="about">
+  <div class="wrap about-grid">
+    <div>
+      <div class="kicker" style="color:var(--mustard);text-transform:uppercase;letter-spacing:.28em;font-size:12px;font-weight:700;">The Idea</div>
+      <h2>Flowers, reduced to their happiest shapes.</h2>
+      <p>Mid Century Flower is a love letter to the 1950s and '60s — the era when a daisy
+        became a circle ringed by ovals, and that was somehow more flower than any photograph.</p>
+      <p>Every piece here is drawn with nothing but vectors: solid fields of warm colour,
+        confident black outlines, and the kind of symmetry that makes a room feel calm.
+        No stock images, no filters, no AI smudge — just shapes arranged with intent.</p>
+      <div class="pills">
+        <span class="pill">Mustard</span><span class="pill">Burnt Orange</span>
+        <span class="pill">Teal</span><span class="pill">Olive</span>
+        <span class="pill">Plum</span><span class="pill">Cream</span>
+      </div>
+    </div>
+    <div class="about-art">
+      <!-- abstract leafy stem -->
+      <svg viewBox="0 0 260 300" role="img" aria-label="A tall abstract branch with alternating leaves and a bloom on top.">
+        <path d="M130 290 C 130 200, 150 170, 130 110" fill="none" stroke="#e3a92c" stroke-width="5" stroke-linecap="round"/>
+        <g stroke="#2b2118" stroke-width="3">
+          <path d="M132 250c30-6 46-26 46-44-24-2-46 16-46 44z" fill="#7d8c4e"/>
+          <path d="M128 210c-30-6-46-26-46-44 24-2 46 16 46 44z" fill="#57632e"/>
+          <path d="M132 175c28-4 44-22 44-40-22-2-44 14-44 40z" fill="#7d8c4e"/>
+        </g>
+        <g transform="translate(130 80)">
+          <g fill="#d2592b" stroke="#2b2118" stroke-width="3">
+            <g id="ab"><ellipse cx="0" cy="-40" rx="16" ry="34"/></g>
+            <use href="#ab" transform="rotate(60)"/><use href="#ab" transform="rotate(120)"/>
+            <use href="#ab" transform="rotate(180)"/><use href="#ab" transform="rotate(240)"/>
+            <use href="#ab" transform="rotate(300)"/>
+          </g>
+          <circle r="22" fill="#fbf4e3" stroke="#2b2118" stroke-width="3"/>
+          <circle r="9" fill="#6b3a52"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== FOOTER ====================== -->
+<footer id="contact" class="foot">
+  <div class="wrap">
+    <svg class="seed" width="40" height="40" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="7" fill="#d2592b" stroke="#2b2118" stroke-width="2.5"/>
+      <g fill="#e3a92c" stroke="#2b2118" stroke-width="2.5">
+        <ellipse cx="20" cy="6" rx="4" ry="7"/><ellipse cx="20" cy="34" rx="4" ry="7"/>
+        <ellipse cx="6" cy="20" rx="7" ry="4"/><ellipse cx="34" cy="20" rx="7" ry="4"/>
+      </g>
+    </svg>
+    <p><strong>Mid Century Flower</strong> — atomic-age botanical art, made of pure vector.</p>
+    <p>Prints are imaginary. The mood is real. Say hello: <a class="home" href="mailto:hello@midcenturyflower.art">hello@midcenturyflower.art</a></p>
+    <p style="margin-top:18px;"><a class="home" href="../">← Back to the arcade</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
