@@ -6,6 +6,7 @@ on:
       - claude/lions-retro-animation-lk98i
       - claude/afl-nextjs-fullstack-app-NPfwT
       - claude/3d-medal-game-hFUfl
+      - claude/mid-century-flower-website-EtPV4
       - main
   workflow_dispatch:
 
